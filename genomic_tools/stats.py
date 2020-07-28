@@ -213,8 +213,8 @@ def get_jk_indeces_1d(array, jk_num, rand_order = True):
         Array assigning an index (from 0 to jk_num - 1) to
         each of the data elements
     """
-    ratio = len(array)/jk_num + int(len(array)%jk_num > 0)
-    jk_indeces = np.arange(len(array), dtype = int)/ratio
+    ratio = int(len(array)/jk_num) + int(len(array)%jk_num > 0)
+    jk_indeces = (np.arange(len(array), dtype = int)/ratio).astype(int)
     np.random.shuffle(jk_indeces)
     return jk_indeces
 
