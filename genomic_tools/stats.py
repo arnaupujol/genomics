@@ -292,3 +292,33 @@ def sig2pow(sig):
         Power indicating interval of confidence.
     """
     return sci_esp.erf(sig/np.sqrt(2.))
+
+def count_cases(variable, ignore_null = True):
+    """This method counts the appearences of each case
+    or label in a list of values.
+
+    Parameters:
+    -----------
+    variable: (pd.Series, np.array)
+        List of values or labels in the variable
+    ignore_null: bool, default is True
+        If True, is does not include the null cases
+
+    Returns:
+    --------
+    cases: list
+        List of appearing cases
+    counts: list
+        Number of appearences per case
+    """
+    cases = []
+    counts = []
+    #If we include the null cases, we add them here
+    if not ignore_null:
+        cases.append('None')
+        counts.append(np.sum(variable.isnull()))
+    #We take only the no null values and count their cases
+    for case in variable[variable.notnull()].unique():
+        cases.append(case)
+        counts.append(np.sum(variable.notnull()*(variable == case)))
+    return cases, counts
