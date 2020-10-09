@@ -2,8 +2,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from barcodes import bar_diff, barcode_list, base_is
-from stats import count_cases
+from genomic_tools.barcodes import bar_diff, barcode_list, base_is
+from genomic_tools.stats import count_cases
 
 def plot_barcode(bar, base2color, y = 0, ysize = 4):
     """
