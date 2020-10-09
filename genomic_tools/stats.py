@@ -148,17 +148,21 @@ def mat_vals(mat, mask = None, diag = True):
     """
     vals = []
     mat_len = mat.shape
-    if mask is None:
-        mask = np.ones(mat_len[0], dtype = bool)
-    if mat_len[0] != mat_len[1] or diag is False:
+    if mat_len[0] != mat_len[1]:
         diag = False
-        mask = np.ones_like(mat, dtype = bool)
+    if mask is None:
+        if diag:
+            mask = np.ones(mat_len[0], dtype = bool)
+        else:
+            mask = np.ones(mat_len, dtype = bool)
     for ii in range(mat_len[0]):
         for jj in range(mat_len[1]):
-            if diag is False and mask[ii,jj]:
-                vals.append(mat[ii,jj])
-            elif jj > ii and mask[ii] and mask[jj]:
-                vals.append(mat[ii,jj])
+            if diag:
+                if jj > ii and mask[ii] and mask[jj]:
+                    vals.append(mat[ii,jj])
+            else:
+                if mask[ii,jj]:
+                    vals.append(mat[ii,jj])
     return np.array(vals)
 
 def mat_mean_err(mat, jk_num = 20, rand_order = True, mask = None, diag = True):
@@ -213,8 +217,10 @@ def get_jk_indeces_1d(array, jk_num, rand_order = True):
         Array assigning an index (from 0 to jk_num - 1) to
         each of the data elements
     """
-    ratio = int(len(array)/jk_num) + int(len(array)%jk_num > 0)
+    ratio = int(len(array)/jk_num)
+    res = int(len(array)%jk_num > 0)
     jk_indeces = (np.arange(len(array), dtype = int)/ratio).astype(int)
+    jk_indeces[-res:] = np.random.randint(jk_num, size = res)#TODO test
     np.random.shuffle(jk_indeces)
     return jk_indeces
 
@@ -253,7 +259,7 @@ def jack_knife(var, jk_var):
     -----------
     var: float
         The mean value of the variable
-    jk_var: np.array
+    jk_var: np.ndarray
         The variable from the subsamples. The shape of the jk_var must be (jk subsamples, bins)
 
     Returns:
@@ -261,17 +267,9 @@ def jack_knife(var, jk_var):
     jk_err: float
         The JK error of var.
     """
-    if type(var) == np.ndarray:
-        jk_dim = jk_var.shape[0]
-        err = (jk_dim - 1.)/jk_dim * (jk_var - var)**2.
-        jk_err = np.sqrt(np.sum(err, axis = 0))
-    else:
-        jk_dim = len(jk_var)
-        err = 0
-        for i in range(jk_dim):
-            for j in range(jk_dim):
-                err += (jk_dim - 1.)/jk_dim*(jk_var[i] - var)*(jk_var[j] - var)
-        jk_err = np.sqrt(err)
+    jk_dim = np.prod(jk_var.shape)
+    err = (jk_dim - 1.)/jk_dim * (jk_var - var)**2.
+    jk_err = np.sqrt(np.sum(err, axis = 0))
     return jk_err
 
 
