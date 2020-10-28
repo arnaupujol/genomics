@@ -2,6 +2,7 @@
 
 import numpy as np
 import scipy.special as sci_esp
+from genomic_tools.relatedness import relatedness_mat
 
 def SVD(X):
     """
@@ -320,3 +321,80 @@ def count_cases(variable, ignore_null = True):
         cases.append(case)
         counts.append(np.sum(variable.notnull()*(variable == case)))
     return cases, counts
+
+
+def bootstrap_resample(data):
+    """
+    This method creates a shuffled version of the data
+    with resampling (so repetitions can happen).
+
+    Parameters:
+    -----------
+    data: np.ndarray
+        Data with shape (samples, values)
+
+    Returns:
+    --------
+    new_data: np.ndarray
+        New data resample from the original, resampling
+        the samples with their data
+    """
+    data_len = len(data)
+    rand_ints = np.random.randint(0, data_len, data_len)
+    new_data = data[rand_ints]
+    return new_data
+
+def mat_bootstrap_mean_err(x_data, y_data, nrands = 100, method = 'pcorr', diag = True):
+    """
+    This method measures the mean and error of the relatedness of two
+    populations using Bootstrap.
+
+    Parameters:
+    -----------
+    x_data: np.ndarray
+        Data of the first population with shape (samples, values)
+    y_data: np.ndarray
+        Data of the second population with shape (samples, values)
+    nrands: int
+        Number of Bootstrap iteration to calculate the error
+    method: str {'L2', 'L1', 'jaccard', 'bin_sharing', 'pcorr'}
+        Metrics used to measure the relatedness (default is 'L2')
+
+            'L2':
+                L2-norm distance, Euclidean
+
+            'L1':
+                L1-norm distance
+
+            'jaccard':
+                Jaccard distance
+
+            'bin_sharing':
+                Binary sharing
+
+            'pcorr':
+                Pearson correlation coefficient
+    diag: bool
+        It specifies whether the relatedness matrix is diagonally symmetric
+        (x_data and y_data are the same) and repeated cases are excluded
+
+    Returns:
+    --------
+    mean: float
+        Mean relatedness of the sample pairs of the two populations
+    err: float
+        Bootstrap error of the mean
+    mean_resamples: float
+        Mean relatedness over all the resamples
+    """
+    means = np.zeros(nrands)
+    mat = relatedness_mat(x_data, y_data, method = method)
+    mean = np.mean(mat_vals(mat, diag = diag))
+    for i in range(nrands):
+        x_data_s = bootstrap_resample(x_data)
+        y_data_s = bootstrap_resample(y_data)
+        mat_s = relatedness_mat(x_data_s, y_data_s, method = method)
+        means[i] = np.mean(mat_vals(mat_s, diag = False))#Diagonal sym broken in resampling
+    err = np.std(means)
+    mean_resamples = np.mean(means)
+    return mean, err, mean_resamples
