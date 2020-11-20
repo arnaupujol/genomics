@@ -356,7 +356,7 @@ def mat_bootstrap_mean_err(x_data, y_data, nrands = 100, method = 'pcorr', diag 
     y_data: np.ndarray
         Data of the second population with shape (samples, values)
     nrands: int
-        Number of Bootstrap iteration to calculate the error
+        Number of Bootstrap iterations to calculate the error
     method: str {'L2', 'L1', 'jaccard', 'bin_sharing', 'pcorr'}
         Metrics used to measure the relatedness (default is 'L2')
 
@@ -395,6 +395,36 @@ def mat_bootstrap_mean_err(x_data, y_data, nrands = 100, method = 'pcorr', diag 
         y_data_s = bootstrap_resample(y_data)
         mat_s = relatedness_mat(x_data_s, y_data_s, method = method)
         means[i] = np.mean(mat_vals(mat_s, diag = False))#Diagonal sym broken in resampling
+    err = np.std(means)
+    mean_resamples = np.mean(means)
+    return mean, err, mean_resamples
+
+def boostrap_mean_err(data, nrands = 100):
+    """
+    This method calculates the mean and error of an array of values
+    using the Bootstrap method.
+
+    Parameters:
+    -----------
+    data: np.ndarray
+        A 1-d array of values
+    nrands: int
+        Number of Bootstrap iteration to calculate the error
+
+    Returns:
+    --------
+    mean: float
+        Mean value of the data
+    err: float
+        Bootstrap error of the mean
+    mean_resamples: float
+        Mean over all the resamples
+    """
+    means = np.zeros(nrands)
+    mean = np.mean(data)
+    for i in range(nrands):
+        r_data = bootstrap_resample(data)
+        means[i] = np.mean(r_data)
     err = np.std(means)
     mean_resamples = np.mean(means)
     return mean, err, mean_resamples

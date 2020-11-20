@@ -216,7 +216,7 @@ def make_barplot(variable, verbose = False, ignore_null = True):
     plt.bar(cases, counts)
     plt.show()
 
-def make_hist(variable, nbins = 50, range = None, title = "", xlabel = "", ylabel = "Frequency", yscale = "linear"):
+def make_hist(variable, nbins = 50, range = None, title = "", xlabel = "", ylabel = "Frequency", yscale = "linear", show = True):
     """This method makes a simple histogram of a variable.
 
     Parameters:
@@ -233,6 +233,8 @@ def make_hist(variable, nbins = 50, range = None, title = "", xlabel = "", ylabe
         Label in y-axis
     yscale: str {'log', 'linear'}
         Scale of y-axis
+    show: bool
+        if True, it shows the plot
 
     Returns:
     --------
@@ -243,4 +245,5 @@ def make_hist(variable, nbins = 50, range = None, title = "", xlabel = "", ylabe
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.yscale(yscale)
-    plt.show()
+    if show:
+        plt.show()
