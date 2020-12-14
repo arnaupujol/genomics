@@ -3,6 +3,7 @@
 import numpy as np
 import scipy.special as sci_esp
 from genomic_tools.relatedness import relatedness_mat
+import pandas as pd
 
 def SVD(X):
     """
@@ -319,7 +320,7 @@ def count_cases(variable, ignore_null = True):
     #We take only the no null values and count their cases
     for case in variable[variable.notnull()].unique():
         cases.append(case)
-        counts.append(np.sum(variable.notnull()*(variable == case)))
+        counts.append(np.sum(variable.notnull()&(variable == case)))
     return cases, counts
 
 
@@ -428,3 +429,47 @@ def boostrap_mean_err(data, nrands = 100):
     err = np.std(means)
     mean_resamples = np.mean(means)
     return mean, err, mean_resamples
+
+def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 1000):
+    """
+    This method calculates the mean positivity of data in
+    time bins.
+
+    Parameters:
+    -----------
+    dates: pd.DataFrame
+        Time dates of visits
+    positive: np.array
+        Values specifying positivity (0 or 1)
+    data_mask: np.array
+        Mask to apply to data
+    nbins: int or sequence of scalars
+        Number of time equally spaced bins (if int) or bin edges (if scalars) used
+    nrands: int
+        Number of random Bootstrap iterations to calculate the errors
+
+    Returns:
+    --------
+    mean_dates: list
+        Mean date per time bin
+    mean_prev: np.array
+        Mean prevalence per bin
+    err_prev: np.array
+        Bootstrap error of the mean prevalence per bin
+    """
+    #Bins defined
+    if data_mask is None:
+        data_mask = np.ones_like(dates, dtype=bool)
+    out, bins = pd.cut(dates[data_mask], nbins, retbins = True)
+    mean_dates = []
+    mean_prev = np.zeros(nbins)
+    err_prev = np.zeros(nbins)
+
+    #Calculate mean time and prevalence per time bin
+    for i in range(len(bins) - 1):
+        mask = (dates >= bins[i])&(dates < bins[i + 1])&data_mask
+        mean_dates.append(dates[mask].mean())
+        m, e, mb = boostrap_mean_err(np.array(positive[mask]), nrands = nrands)
+        mean_prev[i] = m
+        err_prev[i] = e
+    return mean_dates, mean_prev, err_prev
