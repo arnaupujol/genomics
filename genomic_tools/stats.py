@@ -460,13 +460,19 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
     #Bins defined
     if data_mask is None:
         data_mask = np.ones_like(dates, dtype=bool)
-    out, bins = pd.cut(dates[data_mask], nbins, retbins = True)
+    if type(nbins) is int:
+        out, bins = pd.cut(dates[data_mask], nbins, retbins = True)
+    elif len(nbins) > 1:
+        bins = nbins
+        nbins = len(bins) - 1
+    else:
+        print("Error: incorrect assignment of nbins (int or list): " + str(nbins))
     mean_dates = []
     mean_prev = np.zeros(nbins)
     err_prev = np.zeros(nbins)
 
     #Calculate mean time and prevalence per time bin
-    for i in range(len(bins) - 1):
+    for i in range(nbins):
         mask = (dates >= bins[i])&(dates < bins[i + 1])&data_mask
         mean_dates.append(dates[mask].mean())
         m, e, mb = boostrap_mean_err(np.array(positive[mask]), nrands = nrands)
