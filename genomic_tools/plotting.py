@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from genomic_tools.barcodes import bar_diff, barcode_list, base_is
 from genomic_tools.stats import count_cases
 
-def plot_barcode(bar, base2color, y = 0, ysize = 4, xlim = [-1,101], s = 70):
+def plot_barcode(bar, base2color, y = 0, ysize = 4, xlim = None, s = 70):
     """
     This method shows a colour-coded visualisation of the barcode.
 
@@ -32,10 +32,13 @@ def plot_barcode(bar, base2color, y = 0, ysize = 4, xlim = [-1,101], s = 70):
     y = x*0 + y
     colors = [base2color[i] for i in bar]
     plt.scatter(x, y, c = colors, s = s, marker = 'o')
-    plt.xlim(xlim)
+    if xlim is None:
+        plt.xlim(-1, len(bar))
+    else:
+        plt.xlim(xlim)
     plt.xlabel('SNP')
 
-def plot_barcodes(bars, base2color, xlim = [-1,101], s = 70):
+def plot_barcodes(bars, base2color, xlim = None, s = 70):
     """
     This method shows a list of colour-coded visualisations of barcodes.
 
