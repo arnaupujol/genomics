@@ -400,7 +400,7 @@ def mat_bootstrap_mean_err(x_data, y_data, nrands = 100, method = 'pcorr', diag 
     mean_resamples = np.mean(means)
     return mean, err, mean_resamples
 
-def boostrap_mean_err(data, nrands = 100):
+def bootstrap_mean_err(data, nrands = 100, weights = None):
     """
     This method calculates the mean and error of an array of values
     using the Bootstrap method.
@@ -411,6 +411,8 @@ def boostrap_mean_err(data, nrands = 100):
         A 1-d array of values
     nrands: int
         Number of Bootstrap iteration to calculate the error
+    weights: np.array
+        Weights to apply to the data to calculate the mean.
 
     Returns:
     --------
@@ -422,18 +424,20 @@ def boostrap_mean_err(data, nrands = 100):
         Mean over all the resamples
     """
     means = np.zeros(nrands)
-    mean = np.mean(data)
+    if weights is None:
+        weights = np.ones_like(data)
+    mean = np.sum(data*weights)/np.sum(weights)
     for i in range(nrands):
-        r_data = bootstrap_resample(data)
-        means[i] = np.mean(r_data)
+        r_data = bootstrap_resample(np.array([data, weights]).T)
+        r_vals, r_weight = r_data[:,0], r_data[:,1]
+        means[i] = np.sum(r_vals*r_weight)/np.sum(r_weight)
     err = np.std(means)
     mean_resamples = np.mean(means)
     return mean, err, mean_resamples
 
-def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 1000):
+def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 1000, weights = None):
     """
-    This method calculates the mean positivity of data in
-    time bins.
+    This method calculates the mean positivity of data in time bins.
 
     Parameters:
     -----------
@@ -447,6 +451,8 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
         Number of time equally spaced bins (if int) or bin edges (if scalars) used
     nrands: int
         Number of random Bootstrap iterations to calculate the errors
+    weights: np.array
+        Weights to apply to the data to calculate the mean.
 
     Returns:
     --------
@@ -458,6 +464,8 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
         Bootstrap error of the mean prevalence per bin
     """
     #Bins defined
+    if weights is None:
+        weights = np.ones_like(positive)
     if data_mask is None:
         data_mask = np.ones_like(dates, dtype=bool)
     if type(nbins) is int:
@@ -475,7 +483,7 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
     for i in range(nbins):
         mask = (dates >= bins[i])&(dates < bins[i + 1])&data_mask
         mean_dates.append(dates[mask].mean())
-        m, e, mb = boostrap_mean_err(np.array(positive[mask]), nrands = nrands)
+        m, e, mb = bootstrap_mean_err(np.array(positive[mask]), nrands = nrands, weights = weights[mask])
         mean_prev[i] = m
         err_prev[i] = e
     return mean_dates, mean_prev, err_prev
