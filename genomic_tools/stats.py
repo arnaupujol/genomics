@@ -487,3 +487,49 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
         mean_prev[i] = m
         err_prev[i] = e
     return mean_dates, mean_prev, err_prev
+
+def mean_pos_diff(pos_1, pos_2, nrands = 100, weights_1 = None, weights_2 = None):
+    """
+    This method calculates the differences in prevalences between two populations.
+
+    Parameters:
+    -----------
+    pos_1: np.array
+        Positivity information about first population
+    pos_2: np.array
+        Positivity information about second population
+    nrands: int
+        Number of random subsamples for Bootstrap error
+    weights_1: np.array
+        Weights of the first population
+    weights_2: np.array
+        Weights of the second population
+
+    Returns:
+    --------
+    pos_diff: float
+        Positivity difference between the two populations
+    diff_err: float
+        Error in the measured difference
+    mean_boots: float
+        Measured value from Bootstrap subsamples
+    """
+    pos_diffs = np.zeros(nrands)
+    if weights_1 is None:
+        weights_1 = np.ones_like(pos_1)
+    if weights_2 is None:
+        weights_2 = np.ones_like(pos_2)
+    mean_pos_1 = np.sum(pos_1*weights_1)/np.sum(weights_1)
+    mean_pos_2 = np.sum(pos_2*weights_2)/np.sum(weights_2)
+    pos_diff = mean_pos_1 - mean_pos_2
+    for i in range(nrands):
+        pos_1_r = bootstrap_resample(np.array([pos_1, weights_1]).T)
+        r_vals_1, r_weight_1 = pos_1_r[:,0], pos_1_r[:,1]
+        pos_2_r = bootstrap_resample(np.array([pos_2, weights_2]).T)
+        r_vals_2, r_weight_2 = pos_2_r[:,0], pos_2_r[:,1]
+        mean_1 = np.sum(r_vals_1*r_weight_1)/np.sum(r_weight_1)
+        mean_2 = np.sum(r_vals_2*r_weight_2)/np.sum(r_weight_2)
+        pos_diffs[i] = mean_1 - mean_2
+    diff_err = np.std(pos_diffs)
+    mean_boots = np.mean(pos_diffs)
+    return pos_diff, diff_err, mean_boots
