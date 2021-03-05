@@ -426,11 +426,19 @@ def bootstrap_mean_err(data, nrands = 100, weights = None):
     means = np.zeros(nrands)
     if weights is None:
         weights = np.ones_like(data)
-    mean = np.sum(data*weights)/np.sum(weights)
+    try:
+        mean = np.sum(data*weights)/np.sum(weights)
+    except ZeroDivisionError:
+        print('Zero division error when calculating bootstram mean')
+        mean = np.nan
     for i in range(nrands):
         r_data = bootstrap_resample(np.array([data, weights]).T)
         r_vals, r_weight = r_data[:,0], r_data[:,1]
-        means[i] = np.sum(r_vals*r_weight)/np.sum(r_weight)
+        try:
+            means[i] = np.sum(r_vals*r_weight)/np.sum(r_weight)
+        except ZeroDivisionError:
+            print('Zero division error when calculating bootstram mean')
+            means[i] = np.nan
     err = np.std(means)
     mean_resamples = np.mean(means)
     return mean, err, mean_resamples
