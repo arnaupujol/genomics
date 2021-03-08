@@ -491,7 +491,11 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
     for i in range(nbins):
         mask = (dates >= bins[i])&(dates < bins[i + 1])&data_mask
         mean_dates.append(dates[mask].mean())
-        m, e, mb = bootstrap_mean_err(np.array(positive[mask]), nrands = nrands, weights = weights[mask])
+        if np.sum(mask) > 0:
+            m, e, mb = bootstrap_mean_err(np.array(positive[mask]), nrands = nrands, weights = weights[mask])
+        else:
+            print("Warning: bin number ", i, " empty")
+            m, e, mb = np.nan, np.nan, np.nan
         mean_prev[i] = m
         err_prev[i] = e
     return mean_dates, mean_prev, err_prev
