@@ -214,7 +214,7 @@ def clinic_df(clinic_areas, rrs, opd_2to9):
         The corresponding dataframe to use
     """
     if clinic_areas[0] in rrs['hfca'].unique():
-        rrs['visits'] = rrs['tot_test']
+        rrs['testdone'] = rrs['tot_test']
         return rrs
     elif clinic_areas[0] in opd_2to9['place'].unique():
         return opd_2to9
