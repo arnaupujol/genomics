@@ -400,7 +400,7 @@ def mat_bootstrap_mean_err(x_data, y_data, nrands = 100, method = 'pcorr', diag 
     mean_resamples = np.mean(means)
     return mean, err, mean_resamples
 
-def bootstrap_mean_err(data, nrands = 100, weights = None):
+def bootstrap_mean_err(data, nrands = 100, weights = None, ret_resamples = False):
     """
     This method calculates the mean and error of an array of values
     using the Bootstrap method.
@@ -413,6 +413,8 @@ def bootstrap_mean_err(data, nrands = 100, weights = None):
         Number of Bootstrap iteration to calculate the error
     weights: np.array
         Weights to apply to the data to calculate the mean.
+    ret_resamples: bool
+        If True, the means of all the resamples are return
 
     Returns:
     --------
@@ -422,6 +424,8 @@ def bootstrap_mean_err(data, nrands = 100, weights = None):
         Bootstrap error of the mean
     mean_resamples: float
         Mean over all the resamples
+    means: np.array
+        Means of all the resamples
     """
     means = np.zeros(nrands)
     if weights is None:
@@ -441,9 +445,14 @@ def bootstrap_mean_err(data, nrands = 100, weights = None):
             means[i] = np.nan
     err = np.std(means)
     mean_resamples = np.mean(means)
-    return mean, err, mean_resamples
+    if ret_resamples:
+            return mean, err, mean_resamples, means
+    else:
+        return mean, err, mean_resamples
 
-def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 1000, weights = None):
+def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, \
+                        nrands = 1000, weights = None, verbose = True, \
+                        ret_resamples = False):
     """
     This method calculates the mean positivity of data in time bins.
 
@@ -460,7 +469,11 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
     nrands: int
         Number of random Bootstrap iterations to calculate the errors
     weights: np.array
-        Weights to apply to the data to calculate the mean.
+        Weights to apply to the data to calculate the mean
+    verbose: bool
+        It specifies the verbose mode
+    ret_resamples: bool
+        If True, the measurements of all the resamples are return
 
     Returns:
     --------
@@ -470,6 +483,8 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
         Mean prevalence per bin
     err_prev: np.array
         Bootstrap error of the mean prevalence per bin
+    mean_prevs: np.ndarray
+        Mean prevalences per bin for all the resamples
     """
     #Bins defined
     if weights is None:
@@ -482,23 +497,32 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, nrands = 
         bins = nbins
         nbins = len(bins) - 1
     else:
-        print("Error: incorrect assignment of nbins (int or list): " + str(nbins))
+        if verboe:
+            print("Error: incorrect assignment of nbins (int or list): " + str(nbins))
     mean_dates = []
     mean_prev = np.zeros(nbins)
     err_prev = np.zeros(nbins)
+    mean_prevs = np.zeros((nbins, nrands))
 
     #Calculate mean time and prevalence per time bin
     for i in range(nbins):
         mask = (dates >= bins[i])&(dates < bins[i + 1])&data_mask
         mean_dates.append(dates[mask].mean())
         if np.sum(mask) > 0:
-            m, e, mb = bootstrap_mean_err(np.array(positive[mask]), nrands = nrands, weights = weights[mask])
+            m, e, mb, means = bootstrap_mean_err(np.array(positive[mask]), \
+                                        nrands = nrands, weights = weights[mask], \
+                                        ret_resamples = True)
         else:
-            print("Warning: bin number ", i, " empty")
-            m, e, mb = np.nan, np.nan, np.nan
+            if verbose:
+                print("Warning: bin number ", i, " empty")
+            m, e, mb, means = np.nan, np.nan, np.nan, np.nan*np.zeros(nrands)
         mean_prev[i] = m
         err_prev[i] = e
-    return mean_dates, mean_prev, err_prev
+        mean_prevs[i] = means
+    if ret_resamples:
+        return mean_dates, mean_prev, err_prev, mean_prevs
+    else:
+        return mean_dates, mean_prev, err_prev
 
 def mean_pos_diff(pos_1, pos_2, nrands = 100, weights_1 = None, weights_2 = None):
     """

@@ -193,9 +193,12 @@ def make_pie(variable, verbose = False, ignore_null = True):
     plt.pie(counts, labels = cases, autopct='%1.1f%%')
     plt.show()
     if verbose:
-        print("Fraction of cases:")
+        print("Number and fraction of cases:")
+        max_len_str = max([len(i) for i in cases])
         for i in range(len(cases)):
-            print(str(cases[i]) + ": " + str(round(counts[i]*100./sum(counts), 1)) + "%")
+            print(str(cases[i]) + ": " + ' '*(max_len_str - len(cases[i])) + \
+            str(counts[i]) + '\t'+ \
+            str(round(counts[i]*100./sum(counts), 1)) + "%")
 
 def make_barplot(variable, verbose = False, ignore_null = True):
     """

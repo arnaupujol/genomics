@@ -215,6 +215,7 @@ def clinic_df(clinic_areas, rrs, opd_2to9):
     """
     if clinic_areas[0] in rrs['hfca'].unique():
         rrs['testdone'] = rrs['tot_test']
+        rrs['incidence'] = 52802
         return rrs
     elif clinic_areas[0] in opd_2to9['place'].unique():
         return opd_2to9
