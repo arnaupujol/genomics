@@ -473,7 +473,7 @@ def mean_prev_time_bins(dates, positive, data_mask = None, nbins = 10, \
     verbose: bool
         It specifies the verbose mode
     ret_resamples: bool
-        If True, the measurements of all the resamples are return
+        If True, the measurements of all the resamples are returned
 
     Returns:
     --------
