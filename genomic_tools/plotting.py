@@ -194,9 +194,9 @@ def make_pie(variable, verbose = False, ignore_null = True):
     plt.show()
     if verbose:
         print("Number and fraction of cases:")
-        max_len_str = max([len(i) for i in cases])
+        max_len_str = max([len(str(i)) for i in cases])
         for i in range(len(cases)):
-            print(str(cases[i]) + ": " + ' '*(max_len_str - len(cases[i])) + \
+            print(str(cases[i]) + ": " + ' '*(max_len_str - len(str(cases[i]))) + \
             str(counts[i]) + '\t'+ \
             str(round(counts[i]*100./sum(counts), 1)) + "%")
 
