@@ -6,6 +6,7 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.path as mpath
 import contextily as ctx
 import geopandas
 from stat_tools import errors
@@ -191,7 +192,7 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         plt.colorbar(label = 'P-value of deviation wrt average')
         plt.show()
 
-def connectivity_map(ibdfrac_per_cat, categories, list_locs, \
+def connectivity_map(ibdfrac_per_cat, categories, locations, \
                      xlims = [30, 42], ylims = [-28, -10], \
                      figsize = [6,9], color = 'tab:blue', linewidth = 'auto'):
     """
@@ -204,8 +205,8 @@ def connectivity_map(ibdfrac_per_cat, categories, list_locs, \
         locations.
     categories: list
         List of location names.
-    list_locs: dictionary
-        dictionary describing the location of each category.
+    locations: geopandas.GeoDataFrame
+        Geopandas dataframe describing the locations of each category.
     xlims: list
         Limits of x-axis plot.
     ylims: list
@@ -219,11 +220,19 @@ def connectivity_map(ibdfrac_per_cat, categories, list_locs, \
     """
     Path = mpath.Path
 
-    ax = provinces.plot(markersize = 0, alpha = 0, figsize = figsize)
+    ax = locations.plot(markersize = 0, alpha = 0, figsize = figsize)
     ax.set_xlim(xlims[0], xlims[1])
     ax.set_ylim(ylims[0], ylims[1])
     ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik, \
                     crs='EPSG:4326')
+
+    #Define x and y positions of locations
+    locations['x'] = locations['geometry'].x
+    locations['y'] = locations['geometry'].y
+    #Define dictionary of locations and positions
+    list_locs = {}
+    for i, l in enumerate(locations['location']):
+        list_locs[l] = [locations.loc[i]['x'], locations.loc[i]['y']]
     zorder = 1
     for ii, i in enumerate(categories):
         l = 0
@@ -259,8 +268,9 @@ def connectivity_map(ibdfrac_per_cat, categories, list_locs, \
             zorder += 1
         size = 120*((ibdfrac_per_cat.loc[i,i] - \
                     np.min(np.array(ibdfrac_per_cat)))/np.mean(np.array(ibdfrac_per_cat)))
-        provinces[provinces['location'] == i].plot(ax = ax, markersize = size,
-        color = 'k', zorder = zorder)
+        locations[locations['location'] == i].plot(ax = ax, \
+                                                   markersize = size,
+                                                   color = 'k', zorder = zorder)
         zorder += 1
         ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
 
