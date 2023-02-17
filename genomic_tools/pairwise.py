@@ -9,7 +9,7 @@ import matplotlib.patches as mpatches
 import matplotlib.path as mpath
 import contextily as ctx
 import geopandas
-from stat_tools import errors
+from stat_tools import errors, glm
 
 def classify_ibd_per_label(category_label, ibd_res_meta):
     """
@@ -277,7 +277,8 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
 def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
                                min_IBD = .0, max_p = .05, nbins = 10, \
                                min_dist = None, max_dist = None, nrands = 100, \
-                               show = True, label = ''):
+                               show = True, label = '', get_glm = False, \
+                               c = None, verbose = False):
     """
     This method calculates the fraction of IBD related pairs as a function of
     their geographical distance in distance bins.
@@ -306,6 +307,12 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
         If True, the plot is shown.
     label: str
         Label of the error bar.
+    get_glm: bool
+        If true, a binomial regression is done and added to the plot.
+    c: str or RGB value
+        The colour of the plot lines.
+    verbose: bool
+        It specifies if information is printed out.
 
     Returns:
     --------
@@ -334,7 +341,13 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
         mean_dist.append(np.mean(dist_values[mask]))
 
     plt.errorbar(mean_dist, mean_high_ibd_frac, err_high_ibd_frac, \
-                 marker = '+', label = label)
+                 marker = '+', label = label, color = c)
+
+    if get_glm:
+        dist_mask = (dist_values >= min_dist)&(dist_values <= max_dist)
+        glm.regression(dist_values[dist_mask], ibd_mask[dist_mask], \
+                   family = 'binomial', verbose = verbose, show = True, c = c, \
+                   ls = '--', lw = 2)
     plt.ylabel("Fraction of high IBD pairs")
     plt.xlabel("Distance (km)")
     if show:
