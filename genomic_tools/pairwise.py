@@ -39,9 +39,7 @@ def classify_ibd_per_label(category_label, ibd_res_meta, category_label2 = None)
     categories1 = ibd_res_meta[category_label].unique()
     if category_label2 is None:
         category_label2 = category_label
-        categories2 = ibd_res_meta[category_label].unique()
-    else:
-        categories2 = ibd_res_meta[category_label2].unique()
+    categories2 = ibd_res_meta[category_label2].unique()
     ibd_per_cat = {}
     for i in categories1:
         ibd_per_cat[i] = {}
@@ -55,7 +53,6 @@ def classify_ibd_per_label(category_label, ibd_res_meta, category_label2 = None)
             ibd_res_meta_ij = np.array(ibd_res_meta.loc[mask_i, mask_j])
             ibd_res_meta_ij = ibd_res_meta_ij[ibd_res_meta_ij>=0]
             ibd_per_cat[i][j] = ibd_res_meta_ij
-
     #Adding all pairs to the two compinations of different categories,
     #so that the order does not matter when category_label == category_label2
     if category_label == category_label2:
@@ -65,7 +62,17 @@ def classify_ibd_per_label(category_label, ibd_res_meta, category_label2 = None)
                     ibd_per_cat[i][j] = np.concatenate((ibd_per_cat[i][j], \
                                                         ibd_per_cat[j][i]))
                     ibd_per_cat[j][i] = ibd_per_cat[i][j]
+    else:
+        for i in categories2:
+            for j in categories1:
+                mask_i = ibd_res_meta[category_label2] == i
+                mask_j = np.zeros(len(ibd_res_meta.columns), dtype = bool)
+                mask_j[:len(ibd_res_meta)] = ibd_res_meta[category_label] == j
+                ibd_res_meta_ij = np.array(ibd_res_meta.loc[mask_i, mask_j])
+                ibd_res_meta_ij = ibd_res_meta_ij[ibd_res_meta_ij>=0]
+                ibd_per_cat[j][i] = np.concatenate((ibd_per_cat[j][i], ibd_res_meta_ij))
     return ibd_per_cat
+
 
 def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
                           p_per_cat = None, min_IBD = .0, max_p = .05, \
