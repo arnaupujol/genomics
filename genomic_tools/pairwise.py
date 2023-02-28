@@ -60,7 +60,7 @@ def classify_ibd_per_label(category_label, ibd_res_meta):
 
 def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
                           p_per_cat = None, min_IBD = .0, max_p = .05, \
-                          categories = None, verbose = True):
+                          categories = None, categories2 = None, verbose = True):
     """
     This method calculates the fraction of pairwise IBD results higher than a
     threshold with a minimum p-value for the comparisons in different
@@ -85,6 +85,9 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
     categories: list
         List of values of the categories on which ibd_per_cat stores the
         results.
+    categories2: list
+        List of values of the categories on which ibd_per_cat stores the
+        results from the second category label (if any).
     verbose: bool
         Verbose mode.
 
@@ -101,6 +104,9 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
     """
     if categories is None:
         categories = list(ibd_per_cat.keys())
+    if categories2 is None:
+        categories2 = list(ibd_per_cat[categories[0]].keys())
+
     ibd_mask = np.array(all_ibd_res)[np.array(all_ibd_res)>=0] >= min_IBD
     if all_p_res is None or p_per_cat is None:
         overall_high_ibd_frac = np.nanmean(ibd_mask)
@@ -116,7 +122,7 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
     for i in categories:
         ibdfrac_per_cat[i] = {}
         ibdfrac_pval_per_cat[i] = {}
-        for j in categories:
+        for j in categories2:
             ibd_mask = np.array(ibd_per_cat[i][j]) >= min_IBD
             if all_p_res is None or p_per_cat is None:
                 high_ibd_pairs = np.sum(ibd_mask)
@@ -132,7 +138,6 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
                                            overall_high_ibd_frac)
             pval = 2*min(phigher, 1 - phigher)
             ibdfrac_pval_per_cat[i][j] = pval
-
     ibdfrac_per_cat = pd.DataFrame(ibdfrac_per_cat)
     ibdfrac_pval_per_cat = pd.DataFrame(ibdfrac_pval_per_cat)
     return ibdfrac_per_cat, ibdfrac_pval_per_cat, overall_high_ibd_frac
