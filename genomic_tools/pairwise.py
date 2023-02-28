@@ -175,22 +175,23 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     vmax = overall_high_ibd_frac + max_deviation
     plt.imshow(np.array(ibdfrac_per_cat), vmin = vmin, vmax = vmax, \
                cmap = 'bwr')
-    plt.yticks(np.arange(len(ibdfrac_per_cat)), ibdfrac_per_cat.index, \
-               fontsize = 6)
-    plt.xticks(np.arange(len(ibdfrac_per_cat)), ibdfrac_per_cat.index, \
+    plt.xticks(np.arange(ibdfrac_per_cat.shape[1]), ibdfrac_per_cat.columns, \
                rotation = 90, fontsize = 6)
+    plt.yticks(np.arange(ibdfrac_per_cat.shape[0]), ibdfrac_per_cat.index, \
+               fontsize = 6)
     plt.colorbar(label = "Fraction of pairs with IBD >= " + str(min_IBD) + \
                  " and p<= " + str(max_p))
     plt.show()
 
     if ibdfrac_pval_per_cat is not None:
         plt.imshow(np.array(ibdfrac_pval_per_cat), cmap = cmap_p)
-        plt.yticks(np.arange(len(ibdfrac_pval_per_cat)), \
-                   ibdfrac_pval_per_cat.index, fontsize = 6)
-        plt.xticks(np.arange(len(ibdfrac_pval_per_cat)), \
-                   ibdfrac_pval_per_cat.index, rotation = 90, fontsize = 6)
+        plt.xticks(np.arange(ibdfrac_pval_per_cat.shape[1]), ibdfrac_pval_per_cat.columns, \
+                   rotation = 90, fontsize = 6)
+        plt.yticks(np.arange(ibdfrac_pval_per_cat.shape[0]), ibdfrac_pval_per_cat.index, \
+                   fontsize = 6)
         plt.colorbar(label = 'P-value of deviation wrt average')
         plt.show()
+
 
 def connectivity_map(ibdfrac_per_cat, categories, locations, \
                      xlims = [30, 42], ylims = [-28, -10], \
