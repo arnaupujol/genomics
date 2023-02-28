@@ -11,7 +11,7 @@ import contextily as ctx
 import geopandas
 from stat_tools import errors, glm
 
-def classify_ibd_per_label(category_label, ibd_res_meta):
+def classify_ibd_per_label(category_label, ibd_res_meta, category_label2 = None):
     """
     This method generates a dictionary where all IBD results are classified
     accoring to the label of its pairs.
@@ -19,7 +19,10 @@ def classify_ibd_per_label(category_label, ibd_res_meta):
     Parameters:
     -----------
     category_label: str
-        The name of the column of the IBD data with the classification label.
+        The name of the column of the IBD data with the first (or unique)
+        classification label.
+    category_label2: str
+        The name of the column of the IBD data with the second classification label.
     ibd_res_meta: pd.DataFrame
         The data including the pairwise IBD results (NxN) and some extra columns
         at the end with metadata labels. The first N columns and rows must
@@ -33,29 +36,35 @@ def classify_ibd_per_label(category_label, ibd_res_meta):
         pairs with labels i and j.
     """
     #Create dictionary to store all the IBD pairs per regions
-    categories = ibd_res_meta[category_label].unique()
+    categories1 = ibd_res_meta[category_label].unique()
+    if category_label2 is None:
+        category_label2 = category_label
+        categories2 = ibd_res_meta[category_label].unique()
+    else:
+        categories2 = ibd_res_meta[category_label2].unique()
     ibd_per_cat = {}
-    for i in categories:
+    for i in categories1:
         ibd_per_cat[i] = {}
 
     #Assigning all IBD results for each pair of categories
-    for i in categories:
-        for j in categories:
+    for i in categories1:
+        for j in categories2:
             mask_i = ibd_res_meta[category_label] == i
             mask_j = np.zeros(len(ibd_res_meta.columns), dtype = bool)
-            mask_j[:len(ibd_res_meta)] = ibd_res_meta[category_label] == j
+            mask_j[:len(ibd_res_meta)] = ibd_res_meta[category_label2] == j
             ibd_res_meta_ij = np.array(ibd_res_meta.loc[mask_i, mask_j])
             ibd_res_meta_ij = ibd_res_meta_ij[ibd_res_meta_ij>=0]
             ibd_per_cat[i][j] = ibd_res_meta_ij
 
     #Adding all pairs to the two compinations of different categories,
-    #so that the order does not matter
-    for ii, i in enumerate(categories):
-        for j in categories[ii+1:]:
-            if i != j:
-                ibd_per_cat[i][j] = np.concatenate((ibd_per_cat[i][j], \
-                                                    ibd_per_cat[j][i]))
-                ibd_per_cat[j][i] = ibd_per_cat[i][j]
+    #so that the order does not matter when category_label == category_label2
+    if category_label == category_label2:
+        for ii, i in enumerate(categories1):
+            for j in categories2[ii+1:]:
+                if i != j:
+                    ibd_per_cat[i][j] = np.concatenate((ibd_per_cat[i][j], \
+                                                        ibd_per_cat[j][i]))
+                    ibd_per_cat[j][i] = ibd_per_cat[i][j]
     return ibd_per_cat
 
 def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
