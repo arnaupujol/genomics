@@ -87,12 +87,12 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
     all_ibd_res: pd.DataFrame, np.ndarray
         NxN dataframe or matrix wih all the IBD results of the whole dataset.
     ibd_per_cat: dict
-        Dictionary with all the IBD results for each par of categories
+        Dictionary with all the IBD results for each pair of categories
     all_p_res: pd.DataFrame, np.ndarray
         NxN dataframe or matrix wih all the p-values of the IBD results of the
         whole dataset.
     p_per_cat: dict
-        Dictionary with all the p-values of the IBD results for each par of
+        Dictionary with all the p-values of the IBD results for each pair of
         categories.
     min_IBD: float
         Minimum IBD from which to calculate the fraction
