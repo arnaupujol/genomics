@@ -3,7 +3,6 @@
 import pandas as pd
 import numpy as np
 
-
 def get_allele_frequencies(dataframe, locus_name = 'locus', \
                            allele_name = 'allele', freq_name = 'freq', \
                            use_presence = True):

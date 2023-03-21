@@ -1,5 +1,4 @@
-#This module contains methods to analyse pairwise measurements such as IBD
-#relatedness.
+#This module contains methods to analyse pairwise measurements such as IBD relatedness.
 
 import pandas as pd
 import numpy as np
