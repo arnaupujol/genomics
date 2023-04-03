@@ -73,9 +73,9 @@ def classify_ibd_per_label(category_label, ibd_res_meta, category_label2 = None)
     return ibd_per_cat
 
 
-def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
-                          p_per_cat = None, min_IBD = .0, max_p = .05, \
-                          categories = None, categories2 = None, verbose = True):
+def high_ibd_frac_per_cat(all_ibd_res, ibd_res_meta, category_label, category_label2, all_p_res = None, \
+                          ibd_pval_meta = None, min_IBD = .0, max_p = .05, categories = None, \
+                          categories2 = None, verbose = True, perm_pval = True, nrands = 100):
     """
     This method calculates the fraction of pairwise IBD results higher than a
     threshold with a minimum p-value for the comparisons in different
@@ -85,18 +85,28 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
     -----------
     all_ibd_res: pd.DataFrame, np.ndarray
         NxN dataframe or matrix wih all the IBD results of the whole dataset.
-    ibd_per_cat: dict
-        Dictionary with all the IBD results for each pair of categories
+    ibd_res_meta: pd.DataFrame
+        The data including the pairwise IBD results (NxN) and some extra columns
+        at the end with metadata labels. The first N columns and rows must
+        correspond to the pairwise comparison of samples (same order of samples
+        in both rows and columns).
+    category_label: str
+        The name of the column of the IBD data with the first (or unique)
+        classification label.
+    category_label2: str
+        The name of the column of the IBD data with the second classification label.
     all_p_res: pd.DataFrame, np.ndarray
         NxN dataframe or matrix wih all the p-values of the IBD results of the
         whole dataset.
-    p_per_cat: dict
-        Dictionary with all the p-values of the IBD results for each pair of
-        categories.
+    ibd_pval_meta: pd.DataFrame
+        The data including the pairwise IBD p-values (NxN) and some extra columns
+        at the end with metadata labels. The first N columns and rows must
+        correspond to the pairwise comparison of samples (same order of samples
+        in both rows and columns).
     min_IBD: float
-        Minimum IBD from which to calculate the fraction
+        Minimum IBD from which to calculate the fraction.
     max_p: float
-        Maximum p-value from which to calculate the fraction
+        Maximum p-value from which to calculate the fraction.
     categories: list
         List of values of the categories on which ibd_per_cat stores the
         results.
@@ -105,23 +115,36 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
         results from the second category label (if any).
     verbose: bool
         Verbose mode.
+    perm_pval: bool
+        If True, it obtains the p-value from sample permutations. If False, it assumes
+        a binomial distribution of values. 
+    nrands: int
+        Number of random permutations used to calculate the p-values. 
 
     Returns:
     --------
     ibdfrac_per_cat: pd.DataFrame
         Data frame showing the fraction of IBD results higher than the threshold
         for each population of pairs with their correponding categories.
-    ibdfrac_pval_per_cat; pd.DataFrame
+    ibdfrac_pval_per_cat: pd.DataFrame
         Data frame showing the p-value of the deviation of the high IBD fraction
-        with respect to the average (the expected from random pairs)
+        with respect to the average (the expected from random pairs).
     overall_high_ibd_frac: float
         Fraction of pairwise IBD above the threshold over all the samples
     """
+    if category_label2 is None:
+        category_label2 = category_label
+    ibd_per_cat = classify_ibd_per_label(category_label, ibd_res_meta, category_label2)
+    if all_p_res is None:
+        p_per_cat = None
+    else:
+        p_per_cat = classify_ibd_per_label(category_label, ibd_pval_meta, category_label2)
+    
     if categories is None:
         categories = list(ibd_per_cat.keys())
     if categories2 is None:
         categories2 = list(ibd_per_cat[categories[0]].keys())
-
+    
     ibd_mask = np.array(all_ibd_res)[np.array(all_ibd_res)>=0] >= min_IBD
     if all_p_res is None or p_per_cat is None:
         overall_high_ibd_frac = np.nanmean(ibd_mask)
@@ -147,14 +170,20 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_per_cat, all_p_res = None, \
             high_ibd_fraction = high_ibd_pairs/len(ibd_per_cat[i][j])
             ibdfrac_per_cat[i][j] = high_ibd_fraction
 
-            #P-value of deviating (from above or below) from average
+            #P-value of deviating (above or below) from average assuming binomial distributions
             phigher =  1 - stats.binom.cdf(high_ibd_pairs, \
                                            len(ibd_per_cat[i][j]), \
                                            overall_high_ibd_frac)
             pval = 2*min(phigher, 1 - phigher)
             ibdfrac_pval_per_cat[i][j] = pval
     ibdfrac_per_cat = pd.DataFrame(ibdfrac_per_cat)
-    ibdfrac_pval_per_cat = pd.DataFrame(ibdfrac_pval_per_cat)
+    if perm_pval:
+        ibdfrac_per_cat_r = get_all_ibdfrac_perms(category_label, all_ibd_res, ibd_res_meta, all_p_res, \
+                                                  ibd_pval_meta, min_IBD, max_p, \
+                                                  categories, category_label2, categories2, nrands)#TODO TEST
+        ibdfrac_pval_per_cat = get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r)
+    else:
+        ibdfrac_pval_per_cat = pd.DataFrame(ibdfrac_pval_per_cat)
     return ibdfrac_per_cat, ibdfrac_pval_per_cat, overall_high_ibd_frac
 
 def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
@@ -373,3 +402,166 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
     plt.xlabel("Distance (km)")
     if show:
         plt.show()
+
+def get_label_permutation(dataframe, label, label2 = None):
+    """
+    This method creates a label permutation in a dataframe. 
+    
+    Parameters:
+    -----------
+    dataframe: pd.DataFrame
+        Dataframe with label.
+    label: str
+        Name of the label to permute.
+    label2: str
+        Name of the 2nd label to permute.
+    
+    Returns:
+    --------
+    dataframe: pd.DataFrame
+        Dataframe with label and perm_label (the corresponding 
+        permutation). 
+    """
+    indeces = np.array(dataframe.index)
+    np.random.shuffle(indeces)
+    dataframe['perm_label'] = np.array(dataframe[label].loc[indeces])
+    if label2 is not None:
+        dataframe['perm_label2'] = np.array(dataframe[label2].loc[indeces])
+    return dataframe
+
+def ibd_pval_label_permutation(ibd_res_meta, pval_data, label, label2 = None):
+    """
+    This method creates a label permutation in ibd and pval 
+    data frames. 
+    
+    Parameters:
+    -----------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing IBD results.
+    pval_data: pd.DataFrame
+        Data frame containing p-value results.
+    label: str
+        Name of the label to permute.
+    label2: str
+        Name of the 2nd label to permute.
+    
+    Returns:
+    --------
+    ibd_data: pd.DataFrame
+        Data frame containing IBD results, with perm_label column.
+    pval_data: pd.DataFrame
+        Data frame containing p-value results, with perm_label column.
+    """
+    ibd_data = get_label_permutation(ibd_res_meta, label, label2)
+    pval_data['perm_label'] = ibd_data['perm_label']
+    if label2 is not None:
+        pval_data['perm_label2'] = ibd_data['perm_label2']
+    return ibd_data, pval_data
+
+def get_all_ibdfrac_perms(category_label, ibd_res, ibd_res_meta, ibd_pval, \
+                          ibd_pval_meta, min_IBD = .0, max_p = .05, \
+                          categories = None, category_label2=None, categories2 = None, nrands = 100):
+    """
+    This method generates several runs calculating the fraction of related pairs by applying 
+    permutations of the samples over the categories selected for the sampling. 
+    
+    Parameters:
+    -----------
+    category_label: str
+        The name of the column of the IBD data with the first (or unique)
+        classification label.
+    ibd_res: pd.DataFrame, np.ndarray
+        NxN dataframe or matrix wih all the IBD results of the whole dataset.
+    ibd_res_meta: pd.DataFrame
+        The data including the pairwise IBD p-values (NxN) and some extra columns
+        at the end with metadata labels. The first N columns and rows must
+        correspond to the pairwise comparison of samples (same order of samples
+        in both rows and columns).
+    ibd_pval: pd.DataFrame, np.ndarray
+        NxN dataframe or matrix wih all the p-values of the IBD results of the
+        whole dataset.
+    ibd_pval_meta: pd.DataFrame
+        The data including the pairwise IBD p-values (NxN) and some extra columns
+        at the end with metadata labels. The first N columns and rows must
+        correspond to the pairwise comparison of samples (same order of samples
+        in both rows and columns).
+    min_IBD: float
+        Minimum IBD from which to calculate the fraction.
+    max_p: float
+        Maximum p-value from which to calculate the fraction.
+    categories: list
+        List of values of the categories on which ibd_per_cat stores the
+        results.
+    category_label2: str
+        The name of the column of the IBD data with the second classification label.
+    categories2: list
+        List of values of the categories on which ibd_per_cat stores the
+        results from the second category label (if any).
+    nrands: int
+        Number of random permutations used to calculate the IBD-related fraction of pairs.
+        
+    Returns:
+    --------
+    ibdfrac_per_cat_r: pd.DataFrame
+        Data frame showing the fraction of IBD results higher than the threshold for all
+        the permutations for each population of pairs within their correponding categories.
+    """
+    ibdfrac_per_cats = []
+    for r in range(nrands):
+        #Get random permutations of the category label
+        ibd_res_meta, ibd_pval_meta = ibd_pval_label_permutation(ibd_res_meta, ibd_pval_meta, \
+                                                                 category_label, category_label2)
+        #Calculate IBD fraction per category from permutation label
+        perm_category_label = 'perm_label'
+        if category_label2 is None:
+            perm_category_label2 = None
+        else:
+            perm_category_label2 = 'perm_label2' 
+        ibdfrac_per_cat, ibdfrac_binomial_pval_per_cat, \
+        overall_high_ibd_frac = high_ibd_frac_per_cat(ibd_res, ibd_res_meta, perm_category_label, perm_category_label2, \
+                                                      ibd_pval, ibd_pval_meta, min_IBD, max_p, \
+                                                      categories, categories2, verbose = False, perm_pval = False)
+        #add results from new random run
+        ibdfrac_per_cats.append(ibdfrac_per_cat)
+    
+    #Store results as arrays per categories
+    ibdfrac_per_cat_r = {}
+    
+    for i in list(ibdfrac_per_cats[0].columns):
+        ibdfrac_per_cat_r[i] = {}
+        for j in list(ibdfrac_per_cats[0].index):
+            ibdfrac_per_cat_r[i][j] = [ibdfrac_per_cats[ii][i][j] for ii in range(len(ibdfrac_per_cats))]
+    ibdfrac_per_cat_r = pd.DataFrame(ibdfrac_per_cat_r)
+
+    return ibdfrac_per_cat_r
+
+def get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r):
+    """
+    This method calculated the p-value corresponding to a null-hypothesis test under the 
+    assumption that the fraction of related pairs is independent of their categories. 
+    
+    Parameters:
+    -----------
+    ibdfrac_per_cat: pd.DataFrame
+        Data frame showing the fraction of IBD results higher than the threshold
+        for each population of pairs with their correponding categories.
+    ibdfrac_per_cat_r: pd.DataFrame
+        Data frame showing the fraction of IBD results higher than the threshold for all
+        the permutations for each population of pairs within their correponding categories.
+    
+    Returns:
+    --------
+    ibdfrac_per_cat_pval: pd.DataFrame
+        Data frame showing the p-value of the deviation of the high IBD fraction
+        with respect to the average (the expected from random pairs) for the different 
+        pairs of categories.
+    """
+    ibdfrac_per_cat_pval = {}
+    for i in list(ibdfrac_per_cat.columns):
+        ibdfrac_per_cat_pval[i] = {}
+        for j in list(ibdfrac_per_cat.index):
+            phigher = np.mean(ibdfrac_per_cat[i][j] >= ibdfrac_per_cat_r[i][j])
+            pval = 2*min(phigher, 1 - phigher)
+            ibdfrac_per_cat_pval[i][j] = pval
+    ibdfrac_per_cat_pval = pd.DataFrame(ibdfrac_per_cat_pval)
+    return ibdfrac_per_cat_pval
