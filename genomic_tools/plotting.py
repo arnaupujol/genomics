@@ -2,9 +2,10 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from barcodes import bar_diff, barcode_list, base_is
+from genomic_tools.barcodes import bar_diff, barcode_list, base_is
+from genomic_tools.stats import count_cases
 
-def plot_barcode(bar, base2color, y = 0, ysize = 4):
+def plot_barcode(bar, base2color, y = 0, ysize = 4, xlim = None, s = 70):
     """
     This method shows a colour-coded visualisation of the barcode.
 
@@ -15,7 +16,11 @@ def plot_barcode(bar, base2color, y = 0, ysize = 4):
     base2color: dict
         A dictionary specifying the colors for each key
     ysize: float
-        It defines the size of the markers
+        It defines the y size of the figure
+    xlim: list of length 2
+        It defines the x limits of the plot
+    s: float
+        size of the marker
 
     Returns:
     --------
@@ -26,11 +31,14 @@ def plot_barcode(bar, base2color, y = 0, ysize = 4):
     x = np.arange(len(bar))
     y = x*0 + y
     colors = [base2color[i] for i in bar]
-    plt.scatter(x, y, c = colors, s = 70, marker = 'o')
-    plt.xlim(-1,101)
+    plt.scatter(x, y, c = colors, s = s, marker = 'o')
+    if xlim is None:
+        plt.xlim(-1, len(bar))
+    else:
+        plt.xlim(xlim)
     plt.xlabel('SNP')
 
-def plot_barcodes(bars, base2color):
+def plot_barcodes(bars, base2color, xlim = None, s = 70):
     """
     This method shows a list of colour-coded visualisations of barcodes.
 
@@ -40,13 +48,17 @@ def plot_barcodes(bars, base2color):
         List of barcodes
     base2color: dict
         A dictionary specifying the colors for each key
+    xlim: list of length 2
+        It defines the x limits of the plot
+    s: float
+        size of the marker
 
     Returns:
     --------
     Plot with lines of colours corresponding to the bases
     """
     for y in range(len(bars)):
-        plot_barcode(bars[y], base2color, y = y, ysize = 4./15*len(bars))
+        plot_barcode(bars[y], base2color, y = y, ysize = 4./15*len(bars), xlim = xlim, s = s)
     plt.ylim(len(bars),-1)
     plt.ylabel('Sample number')
 
@@ -157,3 +169,87 @@ def plot_FS(bar, c = 'k', title = ''):
 
     fig.suptitle(title)
     plt.show()
+
+def make_pie(variable, verbose = False, ignore_null = True):
+    """
+    This method shows a Pie chart with the percentage of
+    appearence of a given variable in the data.
+
+    Parameters:
+    -----------
+    variable: (pd.Series, np.array)
+        List of values or labels in the variable
+    verbose: bool, default is False
+        If True, it prints the results as text
+    ignore_null: bool, default is True
+        If True, is does not include the null cases
+
+    Returns:
+    --------
+    Plot showing the proportion of appearence of each value
+    """
+    cases, counts = count_cases(variable, ignore_null = ignore_null)
+    plt.figure(figsize=[6,6])
+    plt.pie(counts, labels = cases, autopct='%1.1f%%')
+    plt.show()
+    if verbose:
+        print("Number and fraction of cases:")
+        max_len_str = max([len(str(i)) for i in cases])
+        for i in range(len(cases)):
+            print(str(cases[i]) + ": " + ' '*(max_len_str - len(str(cases[i]))) + \
+            str(counts[i]) + '\t'+ \
+            str(round(counts[i]*100./sum(counts), 1)) + "%")
+
+def make_barplot(variable, verbose = False, ignore_null = True):
+    """
+    This method shows a bar plot with the number of
+    appearences of a given variable in the data.
+
+    Parameters:
+    -----------
+    variable: (pd.Series, np.array)
+        List of values or labels in the variable
+    verbose: bool, default is False
+        If True, it prints the results as text
+    ignore_null: bool, default is True
+        If True, is does not include the null cases
+
+    Returns:
+    --------
+    Plot showing the number of appearences of each value
+    """
+    cases, counts = count_cases(variable, ignore_null = ignore_null)
+    plt.bar(cases, counts)
+    plt.show()
+
+def make_hist(variable, nbins = 50, range = None, title = "", xlabel = "", ylabel = "Frequency", yscale = "linear", show = True):
+    """This method makes a simple histogram of a variable.
+
+    Parameters:
+    -----------
+    variable: list or np.array
+        Array of values
+    nbins: int
+        Number of bins of the histogram
+    title: str
+        Title of the histogram
+    xlabel: str
+        Label in x-axis
+    ylabel: str
+        Label in y-axis
+    yscale: str {'log', 'linear'}
+        Scale of y-axis
+    show: bool
+        if True, it shows the plot
+
+    Returns:
+    --------
+    Plot with the histogram
+    """
+    plt.hist(variable[variable.notnull()], nbins, range = range)
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.yscale(yscale)
+    if show:
+        plt.show()

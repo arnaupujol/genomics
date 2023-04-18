@@ -136,7 +136,7 @@ def barcode_is_valid(bar):
     --------
     boolean specifying if the barcode is valid
     """
-    return bar != '-'
+    return (bar != '-')&(bar != 'X'*101)
 
 def barcodes_are_valid(bars):
     """
