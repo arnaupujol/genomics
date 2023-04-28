@@ -9,6 +9,7 @@ import matplotlib.path as mpath
 import contextily as ctx
 import geopandas
 from stat_tools import errors, glm
+from matplotlib import cm
 
 def classify_ibd_per_label(category_label, ibd_res_meta, category_label2 = None):
     """
@@ -263,6 +264,13 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
         Limits of y-axis plot.
     figsize: list
         Size of figure.
+    color: str
+        Colour of connectivity lines. If auto, the colour encodes the fraction 
+        of IBD related pairs. 
+    linewidth: 'auto' or int
+        If 'auto', the line width is rescaled with respect to the 
+        minimum and average values. 
+    
 
     Returns:
     --------
@@ -300,9 +308,9 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
             yinter = [y[0] + .8*deltay, y[0] + .2*deltay]
             if color == 'auto':
                 max_deviation = np.max(np.abs(np.array(ibdfrac_per_cat).flatten() - \
-                                              overall_high_ibd_frac))
-                vmin = overall_high_ibd_frac - max_deviation
-                vmax = overall_high_ibd_frac + max_deviation
+                                              np.mean(np.array(ibdfrac_per_cat))))
+                vmin = np.mean(np.array(ibdfrac_per_cat)) - max_deviation
+                vmax = np.mean(np.array(ibdfrac_per_cat)) + max_deviation
                 col = cm.turbo((ibdfrac_per_cat.loc[i,j] - vmin)/(vmax-vmin))
             else:
                 col = color
