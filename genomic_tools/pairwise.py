@@ -219,7 +219,7 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     """
     #Renormalising colormaps to show symmetric colorbar with respect to the
     #average fraction
-    max_deviation = np.max(np.abs(np.array(ibdfrac_per_cat).flatten() - \
+    max_deviation = np.nanmax(np.abs(np.array(ibdfrac_per_cat).flatten() - \
                                   overall_high_ibd_frac))
     vmin = overall_high_ibd_frac - max_deviation
     vmax = overall_high_ibd_frac + max_deviation
