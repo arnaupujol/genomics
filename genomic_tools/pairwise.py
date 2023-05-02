@@ -337,7 +337,7 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
         if color == 'auto':
             col = cm.turbo((ibdfrac_per_cat.loc[i,i] - vmin)/(vmax-vmin))
         else:
-            col = 'k''
+            col = 'k'
         locations[locations['location'] == i].plot(ax = ax, \
                                                    markersize = size,
                                                    color = col, zorder = zorder)
@@ -394,9 +394,9 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
         ibd_mask = ibd_mask&(np.array(p_values) <= max_p)
     #Define distance bins
     if min_dist is None:
-        min_dist = np.min(dist_values)
+        min_dist = np.nanmin(dist_values)
     if max_dist is None:
-        max_dist = np.max(dist_values)
+        max_dist = np.nanmax(dist_values)
     dist_bins = np.linspace(min_dist, max_dist, nbins)
     #get mean high IBD fraction per distance bin
     mean_high_ibd_frac = []

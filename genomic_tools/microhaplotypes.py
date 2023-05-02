@@ -156,7 +156,8 @@ def He_from_samples(data, locus_name = 'p_name', allele_name = 'h_popUID', \
     loci_He, overall_He = exp_He(loci_alleles, locus_name = locus_name, freq_name = 'allele_freq')
     return loci_He, overall_He
 
-def fst_all_loci(subsample_data, sample_data):
+def fst_all_loci(subsample_data, sample_data, locus_name = 'p_name', \
+              allele_name = 'h_popUID', freq_name = 'c_AveragedFrac'):
     """
     This method calculates Fst between two populations 
     for all loci and calculates the mean Fst overall loci. 
@@ -171,6 +172,12 @@ def fst_all_loci(subsample_data, sample_data):
         total data.
     locus: str
         Name of the locus to analyse. 
+    locus_name: str
+        Column name of the loci.
+    allele_name: str
+        The column name of the alleles from dataframe.
+    freq_name: str
+        Column name showing the allele frequencies.
         
     Returns:
     --------
@@ -179,17 +186,20 @@ def fst_all_loci(subsample_data, sample_data):
     fst_loci: np.array
         All Fst measurements for all loci. 
     """
-    all_loci = sample_data['p_name'].unique()
+    all_loci = sample_data[locus_name].unique()
     #Calculating Fst for all loci
     fst_loci = []
     for l in all_loci:
-        fst_loci.append(fst_locus(subsample_data, sample_data, l))
+        fst_loci.append(fst_locus(subsample_data, sample_data, l, \
+                                  locus_name = locus_name, \
+                                  allele_name = allele_name, freq_name = freq_name))
     fst_loci = np.array(fst_loci)
     mask = np.isfinite(fst_loci)
     mean_fst = np.mean(fst_loci[mask])
     return mean_fst, fst_loci
 
-def fst_locus(subsample_data, sample_data, locus):
+def fst_locus(subsample_data, sample_data, locus, locus_name = 'p_name', \
+              allele_name = 'h_popUID', freq_name = 'c_AveragedFrac'):
     """
     This method calculates the Wright's Fst for a given locus comparing 
     a two populations, one representing a subsample and the other one 
@@ -205,6 +215,12 @@ def fst_locus(subsample_data, sample_data, locus):
         total data.
     locus: str
         Name of the locus to analyse. 
+    locus_name: str
+        Column name of the loci.
+    allele_name: str
+        The column name of the alleles from dataframe.
+    freq_name: str
+        Column name showing the allele frequencies.
     
     Returns:
     --------
@@ -212,19 +228,19 @@ def fst_locus(subsample_data, sample_data, locus):
         Wright's Fst result
     """
     #Allele frequencies
-    allele_freq = get_allele_frequencies(sample_data, locus_name = 'p_name', \
-                                         allele_name = 'h_popUID', \
-                                         freq_name = 'c_AveragedFrac')
+    allele_freq = get_allele_frequencies(sample_data, locus_name = locus_name, \
+                                         allele_name = allele_name, \
+                                         freq_name = freq_name)
     #Allele frequency in locus
-    locus_mask = allele_freq['p_name'] == locus
+    locus_mask = allele_freq[locus_name] == locus
     p_locus = allele_freq[locus_mask]['allele_freq']
     
     #Get allele_freq for subpopulation
-    allele_freq_sub = get_allele_frequencies(subsample_data, locus_name = 'p_name', \
-                                             allele_name = 'h_popUID', \
-                                             freq_name = 'c_AveragedFrac')
+    allele_freq_sub = get_allele_frequencies(subsample_data, locus_name = locus_name, \
+                                             allele_name = allele_name, \
+                                             freq_name = freq_name)
     #Mean allele frequency in a locus for subpopulation
-    locus_mask_sub = allele_freq_sub['p_name'] == locus
+    locus_mask_sub = allele_freq_sub[locus_name] == locus
     p_locus_sub = allele_freq_sub[locus_mask_sub]['allele_freq']
     
     #Calculating Fst
