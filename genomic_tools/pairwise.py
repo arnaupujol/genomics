@@ -9,6 +9,7 @@ import matplotlib.path as mpath
 import contextily as ctx
 import geopandas
 from stat_tools import errors, glm
+from matplotlib import cm
 
 def classify_ibd_per_label(category_label, ibd_res_meta, category_label2 = None):
     """
@@ -218,7 +219,7 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     """
     #Renormalising colormaps to show symmetric colorbar with respect to the
     #average fraction
-    max_deviation = np.max(np.abs(np.array(ibdfrac_per_cat).flatten() - \
+    max_deviation = np.nanmax(np.abs(np.array(ibdfrac_per_cat).flatten() - \
                                   overall_high_ibd_frac))
     vmin = overall_high_ibd_frac - max_deviation
     vmax = overall_high_ibd_frac + max_deviation
@@ -263,6 +264,14 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
         Limits of y-axis plot.
     figsize: list
         Size of figure.
+    color: str
+        Colour of connectivity lines. If 'auto', the colour encodes the fraction 
+        of IBD related pairs scaled to the range of values. If 'prop', the colour
+        encodes the IBD fraction proportionally. 
+    linewidth: 'auto' or int
+        If 'auto', the line width is rescaled with respect to the 
+        minimum and average values. 
+    
 
     Returns:
     --------
@@ -292,6 +301,8 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
             if linewidth == 'auto':
                 lw = 15*((ibdfrac_per_cat.loc[i,j] - \
                      np.min(np.array(ibdfrac_per_cat)))/np.mean(np.array(ibdfrac_per_cat)))
+            elif linewidth == 'prop':
+                lw = 5*ibdfrac_per_cat.loc[i,j]/np.mean(np.array(ibdfrac_per_cat))
             else:
                 lw = linewidth
             deltax = x[1] - x[0]
@@ -299,10 +310,10 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
             xinter = [x[0] + .2*deltax, x[0] + .8*deltax]
             yinter = [y[0] + .8*deltay, y[0] + .2*deltay]
             if color == 'auto':
-                max_deviation = np.max(np.abs(np.array(ibdfrac_per_cat).flatten() - \
-                                              overall_high_ibd_frac))
-                vmin = overall_high_ibd_frac - max_deviation
-                vmax = overall_high_ibd_frac + max_deviation
+                max_deviation = np.nanmax(np.abs(np.array(ibdfrac_per_cat).flatten() - \
+                                              np.mean(np.array(ibdfrac_per_cat))))
+                vmin = np.mean(np.array(ibdfrac_per_cat)) - max_deviation
+                vmax = np.mean(np.array(ibdfrac_per_cat)) + max_deviation
                 col = cm.turbo((ibdfrac_per_cat.loc[i,j] - vmin)/(vmax-vmin))
             else:
                 col = color
@@ -316,14 +327,20 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
             ax.add_patch(pp1)
 
             zorder += 1
-        size = 120*((ibdfrac_per_cat.loc[i,i] - \
+        if linewidth == 'auto':
+            size = 120*((ibdfrac_per_cat.loc[i,i] - \
                     np.min(np.array(ibdfrac_per_cat)))/np.mean(np.array(ibdfrac_per_cat)))
+        elif linewidth == 'prop':
+            size = 40*ibdfrac_per_cat.loc[i,i]/np.mean(np.array(ibdfrac_per_cat))
+        else:
+            size = 40
+        col = cm.turbo((ibdfrac_per_cat.loc[i,i] - vmin)/(vmax-vmin))
         locations[locations['location'] == i].plot(ax = ax, \
                                                    markersize = size,
-                                                   color = 'k', zorder = zorder)
+                                                   color = col, zorder = zorder)
         zorder += 1
         ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
-
+        
 def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
                                min_IBD = .0, max_p = .05, nbins = 10, \
                                min_dist = None, max_dist = None, nrands = 100, \
