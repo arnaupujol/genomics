@@ -334,7 +334,10 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
             size = 40*ibdfrac_per_cat.loc[i,i]/np.mean(np.array(ibdfrac_per_cat))
         else:
             size = 40
-        col = cm.turbo((ibdfrac_per_cat.loc[i,i] - vmin)/(vmax-vmin))
+        if color == 'auto':
+            col = cm.turbo((ibdfrac_per_cat.loc[i,i] - vmin)/(vmax-vmin))
+        else:
+            col = 'k''
         locations[locations['location'] == i].plot(ax = ax, \
                                                    markersize = size,
                                                    color = col, zorder = zorder)
