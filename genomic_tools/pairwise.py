@@ -348,7 +348,7 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
                                min_IBD = .0, max_p = .05, nbins = 10, \
                                min_dist = None, max_dist = None, nrands = 100, \
                                show = True, label = '', get_glm = False, \
-                               c = None, verbose = False):
+                               c = None, c2 = None, verbose = False, lw = 2):
     """
     This method calculates the fraction of IBD related pairs as a function of
     their geographical distance in distance bins.
@@ -381,8 +381,12 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
         If true, a binomial regression is done and added to the plot.
     c: str or RGB value
         The colour of the plot lines.
+    c2: str or RGB value
+        The colour of the regression lines. If None, c is assigned
     verbose: bool
         It specifies if information is printed out.
+    lw: int
+        Line width of plot lines.
 
     Returns:
     --------
@@ -411,13 +415,15 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
         mean_dist.append(np.mean(dist_values[mask]))
 
     plt.errorbar(mean_dist, mean_high_ibd_frac, err_high_ibd_frac, \
-                 marker = '+', label = label, color = c)
+                 marker = '+', label = label, color = c, lw = lw)
 
     if get_glm:
         dist_mask = (dist_values >= min_dist)&(dist_values <= max_dist)
+        if c2 is None: 
+            c2 = c
         glm.regression(dist_values[dist_mask], ibd_mask[dist_mask], \
-                   family = 'binomial', verbose = verbose, show = True, c = c, \
-                   ls = '--', lw = 2)
+                   family = 'binomial', verbose = verbose, show = True, c = c2, \
+                   ls = '--', lw = lw)
     plt.ylabel("Fraction of high IBD pairs")
     plt.xlabel("Distance (km)")
     if show:
