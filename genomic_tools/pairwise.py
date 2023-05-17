@@ -189,7 +189,8 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_res_meta, category_label, category_la
 
 def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                           ibdfrac_pval_per_cat = None, cmap = 'bwr', \
-                          cmap_p = 'viridis', min_IBD = .0, max_p = .05):
+                          cmap_p = 'viridis', min_IBD = .0, max_p = .05, \
+                            fontsize = 12):
     """
     This method visualises the results of the fraction of IBD above a threshold
     for different categories.
@@ -212,6 +213,8 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         Minimum IBD from which the fraction was calculated
     max_p: float
         Maximum p-value from which the fraction was calculated
+    fontsize: int
+        Font size of labels in plot.
 
     Returns:
     --------
@@ -226,20 +229,20 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     plt.imshow(np.array(ibdfrac_per_cat), vmin = vmin, vmax = vmax, \
                cmap = 'bwr')
     plt.xticks(np.arange(ibdfrac_per_cat.shape[1]), ibdfrac_per_cat.columns, \
-               rotation = 90, fontsize = 6)
+               rotation = 45, fontsize = fontsize)
     plt.yticks(np.arange(ibdfrac_per_cat.shape[0]), ibdfrac_per_cat.index, \
-               fontsize = 6)
-    plt.colorbar(label = "Fraction of pairs with IBD >= " + str(min_IBD) + \
-                 " and p<= " + str(max_p))
+               fontsize = fontsize)
+    plt.colorbar().set_label(label = "Fraction of pairwise IBD >= " + str(min_IBD) + \
+                 " and p<= " + str(max_p), size = fontsize)
     plt.show()
 
     if ibdfrac_pval_per_cat is not None:
         plt.imshow(np.array(ibdfrac_pval_per_cat), cmap = cmap_p)
         plt.xticks(np.arange(ibdfrac_pval_per_cat.shape[1]), ibdfrac_pval_per_cat.columns, \
-                   rotation = 90, fontsize = 6)
+                   rotation = 45, fontsize = fontsize)
         plt.yticks(np.arange(ibdfrac_pval_per_cat.shape[0]), ibdfrac_pval_per_cat.index, \
-                   fontsize = 6)
-        plt.colorbar(label = 'P-value of deviation wrt average')
+                   fontsize = fontsize)
+        plt.colorbar().set_label(label = 'P-value of deviation wrt average', size = fontsize)
         plt.show()
 
 
