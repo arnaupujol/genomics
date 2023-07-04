@@ -280,7 +280,10 @@ def fst_from_p(p_locus_sub, p_locus, verbose = True):
         fst = np.nan
     #Overall mean allele frequency
     mean_p = np.mean(p_locus)
-    subpop_factor = np.sum(p_locus_sub*(1 - p_locus_sub))/allele_num
     total_factor = mean_p*(1 - mean_p)
-    fst = 1 - subpop_factor/total_factor
+    if allele_num == 0 or total_factor == 0:
+        fst = np.nan
+    else:
+        subpop_factor = np.sum(p_locus_sub*(1 - p_locus_sub))/allele_num
+        fst = 1 - subpop_factor/total_factor
     return fst
