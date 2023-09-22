@@ -601,3 +601,107 @@ def get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r):
             ibdfrac_per_cat_pval[i][j] = pval
     ibdfrac_per_cat_pval = pd.DataFrame(ibdfrac_per_cat_pval)
     return ibdfrac_per_cat_pval
+
+def travel_map(travel_matrix, origins, destinies, locations, \
+                     xlims = [30, 42], ylims = [-28, -10], \
+                     figsize = [6,9], color = 'tab:blue', linewidth = 'auto', \
+                    categories2 = None):
+    """
+    This method generates a map visualising travels between locations.
+
+    Parameters:
+    -----------
+    travel_matrix: pd.DataFrame
+        Matrix showing the connectivity (e.g.number of travels) between
+        locations.
+    origins: list
+        List of travel origins.
+    destinies: list
+        List of travel destinies.
+    locations: geopandas.GeoDataFrame
+        Geopandas dataframe describing the locations of each category.
+    xlims: list
+        Limits of x-axis plot.
+    ylims: list
+        Limits of y-axis plot.
+    figsize: list
+        Size of figure.
+    color: str
+        Colour of connectivity lines. If 'auto', the colour encodes the fraction 
+        of IBD related pairs scaled to the range of values. If 'prop', the colour
+        encodes the IBD fraction proportionally. 
+    linewidth: 'auto' or int
+        If 'auto', the line width is rescaled with number of travels. 
+    
+
+    Returns:
+    --------
+    Map visualising the connectivity between categories.
+    """
+    Path = mpath.Path
+
+    ax = locations.plot(markersize = 0, alpha = 0, figsize = figsize)
+    ax.set_xlim(xlims[0], xlims[1])
+    ax.set_ylim(ylims[0], ylims[1])
+    ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik, \
+                    crs='EPSG:4326')
+
+    #Define x and y positions of locations
+    locations['x'] = locations['geometry'].x
+    locations['y'] = locations['geometry'].y
+    #Define dictionary of locations and positions
+    list_locs = {}
+    for i, l in enumerate(locations['location']):
+        list_locs[l] = [locations.loc[i]['x'], locations.loc[i]['y']]
+    zorder = 1
+    for ii, i in enumerate(origins):
+        l = 0
+        for j in destinies:
+            x = [list_locs[i][0], list_locs[j][0]]
+            y = [list_locs[i][1], list_locs[j][1]]
+            if linewidth in ['auto', 'prop', 'log']:
+                if travel_matrix.loc[i,j] == 0:
+                    lw = 0
+                else:
+                    if linewidth == 'log':
+                        lw = 10*(np.log(float(travel_matrix.loc[i,j]))/np.log(np.max(np.array(travel_matrix))))
+                    else:
+                        lw = 10*(float(travel_matrix.loc[i,j])/np.max(np.array(travel_matrix)))
+            else:
+                lw = linewidth
+            deltax = x[1] - x[0]
+            deltay = y[1] - y[0]
+            xinter = [x[0] + .2*deltax, x[0] + .8*deltax]
+            yinter = [y[0] + .8*deltay, y[0] + .2*deltay]
+            if color == 'auto':
+                col = cm.copper(travel_matrix.loc[i,j]/np.max(np.array(travel_matrix)))
+            else:
+                col = color
+            pp1 = mpatches.PathPatch(Path([(x[0], y[0]), (xinter[l%2], \
+                                          yinter[l%2]), (x[1], y[1])], \
+                                          [Path.MOVETO, Path.CURVE3, Path.CURVE3]), \
+                                     fc="none", transform=ax.transData, \
+                                     color = col, lw = lw, zorder = zorder, \
+                                     alpha = .5)
+            l=np.random.randint(10)
+            ax.add_patch(pp1)
+
+            zorder += 1
+        
+        if linewidth in ['auto', 'prop', 'log']:
+            size = 60*travel_matrix.T.sum()[i]/travel_matrix.T.sum().sum()
+        else:
+            size = 60
+        if color == 'auto':
+            if travel_matrix.loc[i,j] == 0:
+                col = cm.copper(0)
+            else:
+                col = cm.copper(travel_matrix.T.sum()[i]/travel_matrix.T.sum().sum())
+        else:
+            col = 'k'
+        locations[locations['location'] == i].plot(ax = ax, \
+                                                   markersize = size,
+                                                   color = col, zorder = zorder)
+        zorder += 1
+        ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
+   
