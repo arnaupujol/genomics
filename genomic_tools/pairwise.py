@@ -190,7 +190,7 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_res_meta, category_label, category_la
 def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                           ibdfrac_pval_per_cat = None, cmap = 'bwr', \
                           cmap_p = 'viridis', min_IBD = .0, max_p = .05, \
-                            fontsize = 12):
+                            fontsize = 12, xticks = None, xrotation = 45):
     """
     This method visualises the results of the fraction of IBD above a threshold
     for different categories.
@@ -215,6 +215,10 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         Maximum p-value from which the fraction was calculated
     fontsize: int
         Font size of labels in plot.
+    xticks: list
+        The list of names associated to xticks
+    xrotation: float
+        The rotation angle of the xticks
 
     Returns:
     --------
@@ -228,8 +232,12 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     vmax = overall_high_ibd_frac + max_deviation
     plt.imshow(np.array(ibdfrac_per_cat), vmin = vmin, vmax = vmax, \
                cmap = 'bwr')
-    plt.xticks(np.arange(ibdfrac_per_cat.shape[1]), ibdfrac_per_cat.columns, \
-               rotation = 45, fontsize = fontsize)
+    if xticks is None: 
+        xnames = ibdfrac_per_cat.columns
+    else: 
+        xnames = xticks
+    plt.xticks(np.arange(ibdfrac_per_cat.shape[1]), xnames, \
+               rotation = xrotation, fontsize = fontsize)
     plt.yticks(np.arange(ibdfrac_per_cat.shape[0]), ibdfrac_per_cat.index, \
                fontsize = fontsize)
     plt.colorbar().set_label(label = "Fraction of pairwise IBD >= " + str(min_IBD) + \
@@ -244,7 +252,6 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                    fontsize = fontsize)
         plt.colorbar().set_label(label = 'P-value of deviation wrt average', size = fontsize)
         plt.show()
-
 
 def connectivity_map(ibdfrac_per_cat, categories, locations, \
                      xlims = [30, 42], ylims = [-28, -10], \
