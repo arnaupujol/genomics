@@ -245,7 +245,7 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     plt.show()
 
     if ibdfrac_pval_per_cat is not None:
-        plt.imshow(np.array(ibdfrac_pval_per_cat), cmap = cmap_p)
+        plt.imshow(np.array(ibdfrac_pval_per_cat), cmap = cmap_p, vmax = .5)
         plt.xticks(np.arange(ibdfrac_pval_per_cat.shape[1]), , xnames, \
                rotation = xrotation, fontsize = fontsize)
         plt.yticks(np.arange(ibdfrac_pval_per_cat.shape[0]), ibdfrac_pval_per_cat.index, \
