@@ -605,7 +605,7 @@ def get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r):
 def travel_map(travel_matrix, origins, destinies, locations, \
                      xlims = [30, 42], ylims = [-28, -10], \
                      figsize = [6,9], color = 'tab:blue', linewidth = 'auto', \
-                    categories2 = None, alpha = 0.5):
+                    categories2 = None, alpha = 0.5, print_locations = True):
     """
     This method generates a map visualising travels between locations.
 
@@ -634,7 +634,8 @@ def travel_map(travel_matrix, origins, destinies, locations, \
         If 'auto', the line width is rescaled with number of travels. 
     alpha: float
         Transparency of lines.
-    
+    print_locations: bool
+        If True, the names of the locations are printed in the map. 
 
     Returns:
     --------
@@ -705,5 +706,7 @@ def travel_map(travel_matrix, origins, destinies, locations, \
                                                    markersize = size,
                                                    color = col, zorder = zorder)
         zorder += 1
-        ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
+    if print_locations:
+        for ii, i in enumerate(locations['location']):
+            ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
    
