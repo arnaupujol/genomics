@@ -605,7 +605,7 @@ def get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r):
 def travel_map(travel_matrix, origins, destinies, locations, \
                      xlims = [30, 42], ylims = [-28, -10], \
                      figsize = [6,9], color = 'tab:blue', linewidth = 'auto', \
-                    categories2 = None):
+                    categories2 = None, alpha = 0.5):
     """
     This method generates a map visualising travels between locations.
 
@@ -632,6 +632,8 @@ def travel_map(travel_matrix, origins, destinies, locations, \
         encodes the IBD fraction proportionally. 
     linewidth: 'auto' or int
         If 'auto', the line width is rescaled with number of travels. 
+    alpha: float
+        Transparency of lines.
     
 
     Returns:
@@ -682,7 +684,7 @@ def travel_map(travel_matrix, origins, destinies, locations, \
                                           [Path.MOVETO, Path.CURVE3, Path.CURVE3]), \
                                      fc="none", transform=ax.transData, \
                                      color = col, lw = lw, zorder = zorder, \
-                                     alpha = .5)
+                                     alpha = alpha)
             l=np.random.randint(10)
             ax.add_patch(pp1)
 
