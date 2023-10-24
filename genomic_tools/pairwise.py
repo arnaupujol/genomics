@@ -355,7 +355,8 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
                                                    markersize = size,
                                                    color = col, zorder = zorder)
         zorder += 1
-        ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
+        if print_locations:
+            ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
         
 def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
                                min_IBD = .0, max_p = .05, nbins = 10, \
