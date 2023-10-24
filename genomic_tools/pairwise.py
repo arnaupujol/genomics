@@ -255,7 +255,8 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
 
 def connectivity_map(ibdfrac_per_cat, categories, locations, \
                      xlims = [30, 42], ylims = [-28, -10], \
-                     figsize = [6,9], color = 'tab:blue', linewidth = 'auto'):
+                     figsize = [6,9], color = 'tab:blue', linewidth = 'auto', \
+                     print_locations = True):
     """
     This method generates a map with connectivities between locations.
 
@@ -281,6 +282,8 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
     linewidth: 'auto' or int
         If 'auto', the line width is rescaled with respect to the 
         minimum and average values. 
+    print_locations: bool
+        If True, the location names are annotated in the map.
     
 
     Returns:
