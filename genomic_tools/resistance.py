@@ -120,7 +120,7 @@ def microhap2mutation_per_locus(microhap_data, mutations, sample_resitance_mutat
         for mut in mutations.columns:
             if m == mut[1:-1]:
                 #If it corresponds to the reference
-                if ref_microhap_list[i] == microhap_list[i]:
+                if microhap_list[i] == mutations[mut]['RefMicrohap']:
                     #If NA, assign 0
                     if np.isnan(sample_resitance_mutations.loc[sample, gene + '_' + mut]):
                         sample_resitance_mutations.loc[sample, gene + '_' + mut] = 0
