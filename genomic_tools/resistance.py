@@ -197,3 +197,106 @@ crt_mutations['CVMNK72-76CVIET'] = {
     'MicrohapIndex' : '72/73/74/75/76', 
     'RefMicrohap' : 'C/V/M/N/K', 
     'ResMicrohap' : 'C/V/I/E/T'}
+
+def get_quintuple_sextuple_mutations(allele_data, all_mut_counts):
+    """
+    This method obtains the dhfr-dhps quintuple and sextuple mutations. 
+    
+    Parameters: 
+    -----------
+    allele_data: pd.DataFrame
+        Data frame with information of sample, gene and microhaplotypes.
+    all_mut_counts: pd.DataFrame
+        Data containing the appearences of each mutation per sample. 
+    
+    Returns: 
+    --------
+    all_mut_counts: pd.DataFrame
+        Data containing the appearences of each mutation per sample, 
+        including the quintuple and sextuple mutations. 
+    """
+    # Allele frequencies of dhfr-dhps quintuple/sextuple mutant loci
+    dhfr_quint_mut_loci = ['108/164', '16/51/59']
+    dhps_quint_mut_loci = ['431/436/437', '540/581']
+    for sample in all_mut_counts.index:
+        dhfr_mask = allele_data['Gene'] == 'dhfr'
+        dhps_mask = allele_data['Gene'] == 'dhps'
+        sample_mask = allele_data['SampleID'] == sample
+        for locus in dhfr_quint_mut_loci:
+            mask_locus = allele_data['MicrohapIndex'] == locus
+            all_mut_counts.loc[sample, 'dhfr_' + locus + '_nalleles'] = allele_data[dhfr_mask&sample_mask&mask_locus]['n.alleles'].mean()
+        for locus in dhps_quint_mut_loci:
+            mask_locus = allele_data['MicrohapIndex'] == locus
+            all_mut_counts.loc[sample, 'dhps_' + locus + '_nalleles'] = allele_data[dhps_mask&sample_mask&mask_locus]['n.alleles'].mean()
+    
+    #Boolean confirming if mutation is present regarless of allele numbers in the loci (we need at most one microhap with >1 alleles)
+    allele_confirmation = (all_mut_counts[['dhfr_108/164_nalleles', 'dhfr_16/51/59_nalleles', \
+                                           'dhps_431/436/437_nalleles', 'dhps_540/581_nalleles']] > 1).sum(axis = 1) < 2
+    allele_confirmation[allele_confirmation == 0] = np.nan
+    
+    #Mutation present
+    all_mut_counts['dhfr-dhps quint'] = all_mut_counts['dhfr_S108N']*all_mut_counts['dhfr_N51I']* all_mut_counts['dhfr_C59R']*all_mut_counts['dhps_A437G']*all_mut_counts['dhps_K540E']*allele_confirmation
+    all_mut_counts['dhfr-dhps sext'] = all_mut_counts['dhfr-dhps quint']*all_mut_counts['dhps_A581G']*allele_confirmation
+    all_mut_counts['dhfr-dhps quint'][all_mut_counts['dhfr-dhps quint'] > 1] = 1
+    all_mut_counts['dhfr-dhps sext'][all_mut_counts['dhfr-dhps sext'] > 1] = 1
+    
+    return all_mut_counts
+
+def count_all_mutations(allele_data, return_all = False):
+    """
+    This method calculates all the presence of drug resistance mutations in an allele data table. 
+    
+    Parameters: 
+    -----------
+    allele_data: pd.DataFrame
+        Data frame with information of sample, gene and microhaplotypes.
+    return_all: bool
+        If True, in addition to a data frame with all mutations if returns a separate data frame 
+        for each type of mutation. 
+        
+    Returns:
+    --------
+    all_mut_counts: pd.DataFrame
+        Data containing the appearences of each mutation per sample. 
+    k13_mut_counts: pd.DataFrame
+        Data containing the appearences of each Kelch 13 mutation.
+    dhfr_mut_counts: pd.DataFrame
+        Data containing the appearences of each dhfr mutation.
+    dhps_mut_counts: pd.DataFrame
+        Data containing the appearences of each dhps mutation.
+    mdr1_mut_counts: pd.DataFrame
+        Data containing the appearences of each mdr1 mutation.
+    crt_mut_counts: pd.DataFrame
+        Data containing the appearences of crt mutations.
+    """
+    k13_mut_counts = count_mutations(allele_data, k13_mutations, sample_list = None, gene = 'k13')
+    k13_mut_counts['total_k13'] = k13_mut_counts.sum(axis = 1, min_count = 1)
+    k13_mut_counts['k13'] = 1*k13_mut_counts['total_k13']
+    k13_mut_counts['k13'][k13_mut_counts['k13']>1] = 1
+    dhfr_mut_counts = count_mutations(allele_data, dhfr_mutations, sample_list = None, gene = 'dhfr')
+    dhfr_mut_counts['total_dhfr'] = dhfr_mut_counts.sum(axis = 1, min_count = 1)
+    dhfr_mut_counts['dhfr'] = 1*dhfr_mut_counts['total_dhfr']
+    dhfr_mut_counts['dhfr'][dhfr_mut_counts['dhfr']>1] = 1
+    dhps_mut_counts = count_mutations(allele_data, dhps_mutations, sample_list = None, gene = 'dhps')
+    dhps_mut_counts['total_dhps'] = dhps_mut_counts.sum(axis = 1, min_count = 1)
+    dhps_mut_counts['dhps'] = 1*dhps_mut_counts['total_dhps']
+    dhps_mut_counts['dhps'][dhps_mut_counts['dhps']>1] = 1
+    mdr1_mut_counts = count_mutations(allele_data, mdr1_mutations, sample_list = None, gene = 'mdr1')
+    mdr1_mut_counts['total_mdr1'] = mdr1_mut_counts.sum(axis = 1, min_count = 1)
+    mdr1_mut_counts['mdr1'] = 1*mdr1_mut_counts['total_mdr1']
+    mdr1_mut_counts['mdr1'][mdr1_mut_counts['mdr1']>1] = 1
+    crt_mut_counts = count_mutations(allele_data, crt_mutations, sample_list = None, gene = 'crt', split_microhaps=False)
+    
+    #Merging all
+    all_mut_counts = pd.merge(k13_mut_counts, dhfr_mut_counts, left_index = True, right_index = True, how = 'outer')
+    all_mut_counts = pd.merge(all_mut_counts, dhps_mut_counts, left_index = True, right_index = True, how = 'outer')
+    all_mut_counts = pd.merge(all_mut_counts, mdr1_mut_counts, left_index = True, right_index = True, how = 'outer')
+    all_mut_counts = pd.merge(all_mut_counts, crt_mut_counts, left_index = True, right_index = True, how = 'outer')
+    
+    #obtain phfr-dhps quintuple and sextuple mutations
+    all_mut_counts = get_quintuple_sextuple_mutations(allele_data, all_mut_counts)
+    
+    if return_all:
+        return all_mut_counts, k13_mut_counts, dhfr_mut_counts, dhps_mut_counts, mdr1_mut_counts, crt_mut_counts
+    else:
+        return all_mut_counts
