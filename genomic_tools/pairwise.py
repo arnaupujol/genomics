@@ -713,4 +713,106 @@ def travel_map(travel_matrix, origins, destinies, locations, \
     if print_locations:
         for ii, i in enumerate(locations['location']):
             ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
-   
+
+#function parameters
+location = 'travel_prov2'
+ibd_threshold = 0.1
+p_value = .05
+variable_name = 'rel_dest2'
+pop_location = 'province'
+
+def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, p_value = 0.05, \
+                                  location = 'province', variable_name = 'rel_origin', pop_location = 'province'):
+    """
+    This method estimates the fraction of related pairs for each sample with specified populations. 
+    
+    Parameters: 
+    -----------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns. 
+    ibd_pval_meta: pd.DataFrame
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns. 
+    ibd_threshold: float
+        Threshold value of IBD to define related pairs. 
+    p_value: float
+        Maximum p-value to consider for related pairs. 
+    location: str
+        Name of column used to identify the location of the sample to define the population to compare with. 
+    variable_name: str
+        Name of the new column showing the fraction of related pairs for each sample. 
+    pop_location: str
+        Name of column used to select the population to compare with the samples. 
+        
+    Returns:
+    --------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns, including the new 
+        column variable_name. 
+    ibd_pval_meta: pd.DataFrame
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns, 
+        including the new column variable_name. 
+    """
+    #Defining filled IBD results
+    ibd_matrix = np.array(ibd_res_meta.iloc[:len(ibd_res_meta), :len(ibd_res_meta)])
+    ibd_matrix = simmetrize_matrix(ibd_matrix)
+    pval_matrix = np.array(ibd_pval_meta.iloc[:len(ibd_pval_meta), :len(ibd_pval_meta)])
+    pval_matrix = simmetrize_matrix(pval_matrix)
+    #Defining samples to analyse
+    sample_list = ibd_res_meta['sampleID'].unique() #TO DO : make it for only people travelling
+    ibd_res_meta[variable_name] = pd.Series({})
+    
+    #loop
+    for i, sample in enumerate(sample_list):
+        #location origin of sample
+        target_location = ibd_res_meta.loc[ibd_res_meta['sampleID'] == sample, location].iloc[0]
+        #Defining samples from origin location
+        target_samples = (ibd_res_meta['sampleID'] != sample)&(ibd_res_meta[pop_location] == target_location)
+        
+        #fraction of pairs with IBD > ibd_threshold
+        high_ibd = ibd_matrix[target_samples, ibd_res_meta['sampleID'] == sample] >= ibd_threshold
+        low_pval = pval_matrix[target_samples, ibd_pval_meta['sampleID'] == sample] <= p_value
+        rel_fraction = (high_ibd&low_pval).mean()
+        
+        #saving relatedness with origin population
+        ibd_res_meta.loc[ibd_res_meta['sampleID'] == sample, variable_name] = rel_fraction
+        ibd_pval_meta.loc[ibd_pval_meta['sampleID'] == sample, variable_name] = rel_fraction
+    return ibd_res_meta, ibd_pval_meta
+
+def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, p_value = 0.05):
+    """
+    This method computes for each sample, its fraction of related pairs with its origin population, and with 
+    the destination populations for up to two travels reported. 
+    
+    Parameters: 
+    -----------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns. 
+    ibd_pval_meta: pd.DataFrame
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns. 
+    ibd_threshold: float
+        Threshold value of IBD to define related pairs. 
+    p_value: float
+        Maximum p-value to consider for related pairs.
+        
+    Returns:
+    --------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns, including the new 
+        columns of relatedness 'rel_origin', 'rel_dest1' and 'rel_dest2'. 
+    ibd_pval_meta: pd.DataFrame
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns, 
+        including the new columns of relatedness 'rel_origin', 'rel_dest1' and 'rel_dest2'. 
+    """
+    ibd_res_meta, ibd_pval_meta = get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, \
+                                                              ibd_threshold = ibd_threshold, p_value = p_value, \
+                                                              location = 'province', variable_name = 'rel_origin', \
+                                                              pop_location = 'province')
+    ibd_res_meta, ibd_pval_meta = get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, \
+                                                              ibd_threshold = ibd_threshold, p_value = p_value, \
+                                                              location = 'travel_prov', variable_name = 'rel_dest1', \
+                                                              pop_location = 'province')
+    ibd_res_meta, ibd_pval_meta = get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, \
+                                                              ibd_threshold = ibd_threshold, p_value = p_value, \
+                                                              location = 'travel_prov2', variable_name = 'rel_dest2', \
+                                                              pop_location = 'province')
+    return ibd_res_meta, ibd_pval_meta
