@@ -115,3 +115,203 @@ def relatedness_mat(data_1, data_2, method = 'L2'):
                 if method == 'pcorr':
                     rel_mat[i,j] = sci_stats.pearsonr(data_1[i], data_2[j])[0]
     return rel_mat
+
+def raw_case_classification(ibd_res_meta, travel_1 = 'travel_prov', travel_2 = 'travel_prov2', \
+                            r_origin = 'rel_origin', r_des1 = 'rel_dest1', r_des2 = 'rel_dest2', \
+                            class_name = 'classification'):
+    """
+    This method classifies infections as local or imported by simply comparing the genetic relatedness 
+    of the samples with their origin population and the travel destination populations. Cases are 
+    classified as imported only when the sample is more genetically related to the population of a travel 
+    destination than from the local population, leaving them as unclassified when no data is available or 
+    complete, or when relatedness values are equal. 
+    
+    Parameters:
+    -----------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns.
+    travel_1: pd.Series
+        Name of the column in ibd_res_meta for the travel destination.
+    travel_2: pd.Series
+        Name of the column in ibd_res_meta for the second travel destination.
+    r_origin: pd.Series
+        Name of the column in ibd_res_meta for the relatedness of samples with their local population. 
+    r_des1: pd.Series
+        Name of the column in ibd_res_meta for the relatedness of samples with the population of their 
+        first reported travel.
+    r_des2: pd.Series
+        Name of the column in ibd_res_meta for the relatedness of samples with the population of their 
+        second reported travel.
+    class_name: str
+        Name of the variable of the case classification. 
+    
+    Returns: 
+    --------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns, 
+        including the case classification. 
+    """
+    #initially setting all as unclassified
+    ibd_res_meta[class_name] = 'Unclassified'
+    #if no travel, classify as local
+    no_travel_mask = ibd_res_meta[travel_1].isnull()&ibd_res_meta[travel_2].isnull()
+    ibd_res_meta.loc[no_travel_mask, class_name] = 'Local'
+    #If only travel 1, compare dest1 with origin
+    trav1_mask = ibd_res_meta[travel_1].notnull()&ibd_res_meta[travel_2].isnull()
+    mask_local = ibd_res_meta[r_origin] > ibd_res_meta[r_des1]
+    mask_equal = ibd_res_meta[r_origin] == ibd_res_meta[r_des1]
+    mask_imported1 = ibd_res_meta[r_des1] > ibd_res_meta[r_origin]
+    ibd_res_meta.loc[trav1_mask&mask_local, class_name] = 'Local'
+    ibd_res_meta.loc[trav1_mask&mask_equal, class_name] = 'Unclassified'
+    ibd_res_meta.loc[trav1_mask&mask_imported1, class_name] = 'Imported'
+    #If only travel 2, compare dest2 with origin
+    trav2_mask = ibd_res_meta[travel_1].isnull()&ibd_res_meta[travel_2].notnull()
+    mask_local = ibd_res_meta[r_origin] > ibd_res_meta[r_des2]
+    mask_equal = ibd_res_meta[r_origin] == ibd_res_meta[r_des2]
+    mask_imported2 = ibd_res_meta[r_des2] > ibd_res_meta[r_origin]
+    ibd_res_meta.loc[trav2_mask&mask_local, class_name] = 'Local'
+    ibd_res_meta.loc[trav2_mask&mask_equal, class_name] = 'Unclassified'
+    ibd_res_meta.loc[trav2_mask&mask_imported2, class_name] = 'Imported'
+    #If both travels not null, compare both with origin
+    trav12_mask = ibd_res_meta[travel_1].notnull()&ibd_res_meta[travel_2].notnull()
+    mask_local = (ibd_res_meta[r_origin] > ibd_res_meta[r_des1])&(ibd_res_meta[r_origin] > ibd_res_meta[r_des2])
+    ibd_res_meta.loc[trav12_mask&mask_local, class_name] = 'Local'
+    mask_equal1 = (ibd_res_meta[r_origin] == ibd_res_meta[r_des1])&(ibd_res_meta[r_origin] >= ibd_res_meta[r_des2])
+    mask_equal2 = (ibd_res_meta[r_origin] >= ibd_res_meta[r_des1])&(ibd_res_meta[r_origin] == ibd_res_meta[r_des2])
+    ibd_res_meta.loc[trav12_mask&mask_equal1&mask_equal2, class_name] = 'Unclassified'
+    mask_imported = (ibd_res_meta[r_origin] < ibd_res_meta[r_des1]) | (ibd_res_meta[r_origin] < ibd_res_meta[r_des2])
+    ibd_res_meta.loc[trav12_mask&mask_imported, class_name] = 'Imported'
+    return ibd_res_meta
+
+def r_importation_prob(ibd_res_meta, travel_1 = 'travel_prov', travel_2 = 'travel_prov2', \
+                       r_origin = 'rel_origin', r_des1 = 'rel_dest1', r_des2 = 'rel_dest2', \
+                       class_name = 'prob_imported'):
+    """
+    This method estimates the probability of cases being imported at the individual level from 
+    the fraction of the genetic relatedness of the sample between the origin and the destination 
+    populations, as P(I) = sum_i (r_dest_i) / (sum_i (r_dest_i) + r_origin), where r_dest_i is 
+    the relatedness of the sample with the population from the destination of the travel i, 
+    and r_origin the relatedness with the local population. 
+    
+    Parameters:
+    -----------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns.
+    travel_1: pd.Series
+        Name of the column in ibd_res_meta for the travel destination.
+    travel_2: pd.Series
+        Name of the column in ibd_res_meta for the second travel destination.
+    r_origin: pd.Series
+        Name of the column in ibd_res_meta for the relatedness of samples with their local population. 
+    r_des1: pd.Series
+        Name of the column in ibd_res_meta for the relatedness of samples with the population of their 
+        first reported travel.
+    r_des2: pd.Series
+        Name of the column in ibd_res_meta for the relatedness of samples with the population of their 
+        second reported travel.
+    class_name: str
+        Name of the variable of the case classification. 
+    
+    Returns: 
+    --------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata columns, 
+        including the case classification. 
+    """
+    #initially setting all as unclassified
+    ibd_res_meta[class_name] = np.nan
+    #if no travel, P(I) = 0
+    no_travel_mask = ibd_res_meta[travel_1].isnull()&ibd_res_meta[travel_2].isnull()
+    ibd_res_meta.loc[no_travel_mask, class_name] = 0
+    #If only travel 1, use only r_des1 and r_origin
+    trav1_mask = ibd_res_meta[travel_1].notnull()&ibd_res_meta[travel_2].isnull()
+    ibd_res_meta.loc[trav1_mask, class_name] = ibd_res_meta[r_des1]/(ibd_res_meta[r_des1] + ibd_res_meta[r_origin])
+    #If only travel 2, use only r_des2 and r_origin
+    trav2_mask = ibd_res_meta[travel_1].isnull()&ibd_res_meta[travel_2].notnull()
+    ibd_res_meta.loc[trav2_mask, class_name] = ibd_res_meta[r_des2]/(ibd_res_meta[r_des2] + ibd_res_meta[r_origin])
+    #If both travels not null, use r_des1, r_des2 and r_origin
+    trav12_mask = ibd_res_meta[travel_1].notnull()&ibd_res_meta[travel_2].notnull()
+    ibd_res_meta.loc[trav12_mask, class_name] = (ibd_res_meta[r_des1] + ibd_res_meta[r_des2])/(ibd_res_meta[r_des1] + ibd_res_meta[r_des2] + ibd_res_meta[r_origin])
+    return ibd_res_meta
+
+#old deprecated function:
+def individual_case_classification(province_samples, destiny_samples, ibdfrac_per_cat, \
+                                   visualise = True, verbose = True):#TODO address when multiple travels are reported
+    """
+    This method classifies as local or imported infections cases with reported travels. 
+    
+    Parameters:
+    -----------
+    province_samples: str
+        List with origin location of each sample.
+    destiny_samples: str
+        List with travel destination of the sample. 
+    ibdfrac_per_cat: pd.DataFrame
+        2-D matrix with the fraction of related pairs between each sample (columns) and 
+        the different locations (rows). 
+    visualise: bool
+        If true, visualisation plots are produced. 
+    verbose: bool
+        If true, output text is printed. 
+        
+    
+    Returns: 
+    --------
+    case_class: pd.DataFrame
+        Data frame with information on the samples and their case classification.
+    """
+    #DataFrame of case classification
+    case_class = pd.DataFrame(columns = ['sampleID', 'origin', 'destination', 'rel_origin', \
+                            'rel_destination', 'classification'])#TODO address for multiple reported travels
+    #Case classification for samples
+    for i in range(len(province_samples)):
+        if verbose: 
+            print("Sample:", ibdfrac_per_cat.columns[i])
+            print("Travel:", province_samples[i], "->", destiny_samples[i])
+        ibd_orig = ibdfrac_per_cat.loc[province_samples[i], ibdfrac_per_cat.columns[i]]
+        if destiny_samples[i] in list(ibdfrac_per_cat.index):
+            ibd_dest = ibdfrac_per_cat.loc[destiny_samples[i], ibdfrac_per_cat.columns[i]]
+        else: 
+            ibd_dest = np.nan
+        if verbose: 
+            print("IBD at origin:", ibd_orig)
+            print("IBD at destiny:", ibd_dest)
+        label = None
+        #classification
+        if ibd_orig > ibd_dest:
+            classif = 'local'
+            if verbose: 
+                print("                ---------")
+                print("Classification: | local |")
+        elif ibd_orig < ibd_dest:
+            classif = 'imported'
+            if verbose: 
+                print("                ------------")
+                print("Classification: | imported |")
+        else:
+            classif = 'Unclassified'
+            if verbose: 
+                print("Unclassified:", ibd_orig, "vs", ibd_dest)
+        case_class = pd.concat([case_class, pd.DataFrame({'sampleID' : [ibdfrac_per_cat.columns[i]], \
+                                            'origin' : [province_samples[i]], \
+                                             'destination' : [destiny_samples[i]], \
+                                             'rel_origin' : [ibd_orig], \
+                                             'rel_destination' : [ibd_dest], \
+                                             'classification' : [classif]})])
+        if verbose:
+            print("----------------------------")
+    if visualise:
+        for i, case in enumerate(case_class['classification'].unique()):
+            mask = case_class['classification'] == case
+            plt.scatter(case_class['rel_origin'][mask], case_class['rel_destination'][mask], label = case)
+        ibd_max = min(case_class['rel_origin'].max(), case_class['rel_destination'].max())
+        plt.plot([0, ibd_max], [0, ibd_max], c = 'tab:grey', label = [r'$R_{origin} = R_{dest}$'])
+        plt.xlabel("IBD fraction at origin")
+        plt.ylabel("IBD fraction at destiny")
+        plt.legend()
+        plt.show()
+    if verbose: 
+        print("Total local:", np.sum(case_class['classification'] == 'local'))
+        print("Total imported:", np.sum(case_class['classification'] == 'imported'))
+        print("Total unkwnown:", np.sum(case_class['classification'] == 'Unclassified'))
+    return case_class

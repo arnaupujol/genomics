@@ -776,6 +776,8 @@ def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0
         #saving relatedness with origin population
         ibd_res_meta.loc[ibd_res_meta['sampleID'] == sample, variable_name] = rel_fraction
         ibd_pval_meta.loc[ibd_pval_meta['sampleID'] == sample, variable_name] = rel_fraction
+    ibd_res_meta[variable_name] = ibd_res_meta[variable_name].astype(float)
+    ibd_pval_meta[variable_name] = ibd_pval_meta[variable_name].astype(float)
     return ibd_res_meta, ibd_pval_meta
 
 def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, p_value = 0.05):
