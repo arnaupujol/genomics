@@ -816,3 +816,27 @@ def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, ibd_threshold = 
                                                               location = 'travel_prov2', variable_name = 'rel_dest2', \
                                                               pop_location = 'province')
     return ibd_res_meta, ibd_pval_meta
+
+def simmetrize_matrix(matrix, diagonal = False):
+    """
+    This method fills the empty values of a matrix from their
+    symmetric values.
+    
+    Parameters: 
+    -----------
+    matrix: np.array
+        2-D matrix with the same number of rows and columns. 
+    diagonal: bool
+        If False, the diagonal elements are kept as nan. 
+    
+    Returns: 
+    --------
+    matrix: np.array
+        The filled and diagonal 2-D matrix. 
+    """
+    matrix[np.isnan(matrix)] = 0
+    matrix = matrix + matrix.T
+    if diagonal is False:
+        for i in range(len(matrix)):
+            matrix[i,i] = np.nan
+    return matrix
