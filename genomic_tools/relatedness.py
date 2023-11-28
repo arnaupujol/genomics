@@ -315,3 +315,62 @@ def individual_case_classification(province_samples, destiny_samples, ibdfrac_pe
         print("Total imported:", np.sum(case_class['classification'] == 'imported'))
         print("Total unkwnown:", np.sum(case_class['classification'] == 'Unclassified'))
     return case_class
+
+def importation_statistics(ibd_res_meta):
+    """
+    This method outputs the statistics of imported cases per travel 
+    destination. 
+    
+    Parameters: 
+    -----------
+    ibd_res_meta: pd.DataFrame
+        Data frame containing the pairwise IBD results and other metadata 
+        columns including relatedness statistics and case classification. 
+        
+    Returns: 
+    --------
+    imported_stats: pd.DataFrame
+        Data frame with the statistics on the imported cases. 
+    """
+    #Specifying importation contributions of each travel when 2 are reported
+    mask_2travels = ibd_res_meta['rel_dest1'].notnull()&ibd_res_meta['rel_dest2'].notnull()
+    ibd_res_meta.loc[:,'prob_imp1'] = pd.Series()
+    ibd_res_meta.loc[mask_2travels, 'prob_imp1'] = ibd_res_meta['rel_dest1']/(ibd_res_meta['rel_dest1'] + \
+                                                                              ibd_res_meta['rel_dest2'] + \
+                                                                              ibd_res_meta['rel_origin'])
+    ibd_res_meta.loc[mask_2travels, 'prob_imp2'] = ibd_res_meta['rel_dest2']/(ibd_res_meta['rel_dest1'] + \
+                                                                              ibd_res_meta['rel_dest2'] + \
+                                                                              ibd_res_meta['rel_origin'])
+    
+    total_cases = np.sum(ibd_res_meta['prob_imported'].notnull())
+
+    #Masking REACT2 cases with metadata
+    mask_trav1 = ibd_res_meta['rel_dest1'].notnull()&ibd_res_meta['rel_dest2'].isnull()
+    mask_trav2 = ibd_res_meta['rel_dest1'].isnull()&ibd_res_meta['rel_dest2'].notnull()
+    mask_trav12 = mask_2travels
+    #Defining list of all travel destinations
+    dest_list_1 = ibd_res_meta['travel_prov'].unique().astype(str)
+    dest_list_2 = ibd_res_meta['travel_prov2'].unique().astype(str)
+    all_destinations = np.unique(np.concatenate((dest_list_1, dest_list_2)))
+    #Summing imported cases
+    imported = {}
+    for dest in all_destinations:
+        mask_dest1 = ibd_res_meta['travel_prov'] == dest
+        mask_dest2 = ibd_res_meta['travel_prov2'] == dest
+        imported[dest] = ibd_res_meta.loc[mask_trav12&mask_dest1, 'prob_imp1'].sum()
+        imported[dest] = imported[dest] + ibd_res_meta.loc[mask_trav12&mask_dest2, 'prob_imp2'].sum()
+        imported[dest] = imported[dest] + ibd_res_meta.loc[mask_trav1&mask_dest1, 'prob_imported'].sum()
+        imported[dest] = imported[dest] + ibd_res_meta.loc[mask_trav2&mask_dest2, 'prob_imported'].sum()
+
+    imported = pd.Series(imported)
+    
+    #Calculating imported stats
+    imported_stats = pd.DataFrame()
+    for i in all_destinations:
+        imported_stats[i] = {'N. cases' : imported[i], \
+                        '% cases' : imported[i]/total_cases*100}
+    del imported_stats['nan']
+    imported_stats['Total'] = {'N. cases' : imported_stats.loc['N. cases'].sum(), \
+                              '% cases' : imported_stats.loc['% cases'].sum()}
+    imported_stats = imported_stats.T
+    return imported_stats
