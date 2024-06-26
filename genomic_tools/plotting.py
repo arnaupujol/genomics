@@ -170,7 +170,7 @@ def plot_FS(bar, c = 'k', title = ''):
     fig.suptitle(title)
     plt.show()
 
-def make_pie(variable, verbose = False, ignore_null = True):
+def make_pie(variable, verbose = False, ignore_null = True, save_as = None):
     """
     This method shows a Pie chart with the percentage of
     appearence of a given variable in the data.
@@ -183,6 +183,8 @@ def make_pie(variable, verbose = False, ignore_null = True):
         If True, it prints the results as text
     ignore_null: bool, default is True
         If True, is does not include the null cases
+    save_as: str
+        Path and name of the file where to store the pie plot.
 
     Returns:
     --------
@@ -191,6 +193,8 @@ def make_pie(variable, verbose = False, ignore_null = True):
     cases, counts = count_cases(variable, ignore_null = ignore_null)
     plt.figure(figsize=[6,6])
     plt.pie(counts, labels = cases, autopct='%1.1f%%')
+    if save_as is not None:
+        plt.savefig(save_as)
     plt.show()
     if verbose:
         print("Number and fraction of cases:")
