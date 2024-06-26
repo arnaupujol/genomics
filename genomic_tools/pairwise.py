@@ -118,9 +118,9 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_res_meta, category_label, category_la
         Verbose mode.
     perm_pval: bool
         If True, it obtains the p-value from sample permutations. If False, it assumes
-        a binomial distribution of values. 
+        a binomial distribution of values.
     nrands: int
-        Number of random permutations used to calculate the p-values. 
+        Number of random permutations used to calculate the p-values.
 
     Returns:
     --------
@@ -140,12 +140,12 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_res_meta, category_label, category_la
         p_per_cat = None
     else:
         p_per_cat = classify_ibd_per_label(category_label, ibd_pval_meta, category_label2)
-    
+
     if categories is None:
         categories = list(ibd_per_cat.keys())
     if categories2 is None:
         categories2 = list(ibd_per_cat[categories[0]].keys())
-    
+
     ibd_mask = np.array(all_ibd_res)[np.array(all_ibd_res)>=0] >= min_IBD
     if all_p_res is None or p_per_cat is None:
         overall_high_ibd_frac = np.nanmean(ibd_mask)
@@ -190,7 +190,8 @@ def high_ibd_frac_per_cat(all_ibd_res, ibd_res_meta, category_label, category_la
 def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                           ibdfrac_pval_per_cat = None, cmap = 'bwr', \
                           cmap_p = 'viridis', min_IBD = .0, max_p = .05, \
-                            fontsize = 12, xticks = None, xrotation = 45):
+                            fontsize = 12, xticks = None, xrotation = 45, \
+                            save_as = None):
     """
     This method visualises the results of the fraction of IBD above a threshold
     for different categories.
@@ -219,6 +220,10 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         The list of names associated to xticks
     xrotation: float
         The rotation angle of the xticks
+    save_as: str
+        It defines the path where to save the figures. It assumes that the last
+        four characters specify the format (e.g. ".pdf"), so that "_pval" is
+        appended to the name before this for the plot showing p-values.
 
     Returns:
     --------
@@ -232,9 +237,9 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     vmax = overall_high_ibd_frac + max_deviation
     plt.imshow(np.array(ibdfrac_per_cat), vmin = vmin, vmax = vmax, \
                cmap = 'bwr')
-    if xticks is None: 
+    if xticks is None:
         xnames = ibdfrac_per_cat.columns
-    else: 
+    else:
         xnames = xticks
     plt.xticks(np.arange(ibdfrac_per_cat.shape[1]), xnames, \
                rotation = xrotation, fontsize = fontsize)
@@ -242,6 +247,8 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                fontsize = fontsize)
     plt.colorbar().set_label(label = "Fraction of pairwise IBD >= " + str(min_IBD) + \
                  " and p<= " + str(max_p), size = fontsize)
+    if save_as is not None:
+        plt.savefig(save_as)
     plt.show()
 
     if ibdfrac_pval_per_cat is not None:
@@ -251,6 +258,8 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         plt.yticks(np.arange(ibdfrac_pval_per_cat.shape[0]), ibdfrac_pval_per_cat.index, \
                    fontsize = fontsize)
         plt.colorbar().set_label(label = 'P-value of deviation wrt average', size = fontsize)
+        if save_as is not None:
+            plt.savefig(save_as[:-4] + "_pval" + save_as[-4:])
         plt.show()
 
 def connectivity_map(ibdfrac_per_cat, categories, locations, \
@@ -276,15 +285,15 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
     figsize: list
         Size of figure.
     color: str
-        Colour of connectivity lines. If 'auto', the colour encodes the fraction 
+        Colour of connectivity lines. If 'auto', the colour encodes the fraction
         of IBD related pairs scaled to the range of values. If 'prop', the colour
-        encodes the IBD fraction proportionally. 
+        encodes the IBD fraction proportionally.
     linewidth: 'auto' or int
-        If 'auto', the line width is rescaled with respect to the 
-        minimum and average values. 
+        If 'auto', the line width is rescaled with respect to the
+        minimum and average values.
     print_locations: bool
         If True, the location names are annotated in the map.
-    
+
 
     Returns:
     --------
@@ -357,7 +366,7 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
         zorder += 1
         if print_locations:
             ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
-        
+
 def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
                                min_IBD = .0, max_p = .05, nbins = 10, \
                                min_dist = None, max_dist = None, nrands = 100, \
@@ -433,7 +442,7 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
 
     if get_glm:
         dist_mask = (dist_values >= min_dist)&(dist_values <= max_dist)
-        if c2 is None: 
+        if c2 is None:
             c2 = c
         glm.regression(dist_values[dist_mask], ibd_mask[dist_mask], \
                    family = 'binomial', verbose = verbose, show = True, c = c2, \
@@ -445,8 +454,8 @@ def mean_high_ibd_frac_vs_dist(ibd_values, dist_values, p_values = None, \
 
 def get_label_permutation(dataframe, label, label2 = None):
     """
-    This method creates a label permutation in a dataframe. 
-    
+    This method creates a label permutation in a dataframe.
+
     Parameters:
     -----------
     dataframe: pd.DataFrame
@@ -455,12 +464,12 @@ def get_label_permutation(dataframe, label, label2 = None):
         Name of the label to permute.
     label2: str
         Name of the 2nd label to permute.
-    
+
     Returns:
     --------
     dataframe: pd.DataFrame
-        Dataframe with label and perm_label (the corresponding 
-        permutation). 
+        Dataframe with label and perm_label (the corresponding
+        permutation).
     """
     indeces = np.array(dataframe.index)
     np.random.shuffle(indeces)
@@ -471,9 +480,9 @@ def get_label_permutation(dataframe, label, label2 = None):
 
 def ibd_pval_label_permutation(ibd_res_meta, pval_data, label, label2 = None):
     """
-    This method creates a label permutation in ibd and pval 
-    data frames. 
-    
+    This method creates a label permutation in ibd and pval
+    data frames.
+
     Parameters:
     -----------
     ibd_res_meta: pd.DataFrame
@@ -484,7 +493,7 @@ def ibd_pval_label_permutation(ibd_res_meta, pval_data, label, label2 = None):
         Name of the label to permute.
     label2: str
         Name of the 2nd label to permute.
-    
+
     Returns:
     --------
     ibd_data: pd.DataFrame
@@ -502,9 +511,9 @@ def get_all_ibdfrac_perms(category_label, ibd_res, ibd_res_meta, ibd_pval, \
                           ibd_pval_meta, min_IBD = .0, max_p = .05, \
                           categories = None, category_label2=None, categories2 = None, nrands = 100):
     """
-    This method generates several runs calculating the fraction of related pairs by applying 
-    permutations of the samples over the categories selected for the sampling. 
-    
+    This method generates several runs calculating the fraction of related pairs by applying
+    permutations of the samples over the categories selected for the sampling.
+
     Parameters:
     -----------
     category_label: str
@@ -539,7 +548,7 @@ def get_all_ibdfrac_perms(category_label, ibd_res, ibd_res_meta, ibd_pval, \
         results from the second category label (if any).
     nrands: int
         Number of random permutations used to calculate the IBD-related fraction of pairs.
-        
+
     Returns:
     --------
     ibdfrac_per_cat_r: pd.DataFrame
@@ -556,17 +565,17 @@ def get_all_ibdfrac_perms(category_label, ibd_res, ibd_res_meta, ibd_pval, \
         if category_label2 is None:
             perm_category_label2 = None
         else:
-            perm_category_label2 = 'perm_label2' 
+            perm_category_label2 = 'perm_label2'
         ibdfrac_per_cat, ibdfrac_binomial_pval_per_cat, \
         overall_high_ibd_frac = high_ibd_frac_per_cat(ibd_res, ibd_res_meta, perm_category_label, perm_category_label2, \
                                                       ibd_pval, ibd_pval_meta, min_IBD, max_p, \
                                                       categories, categories2, verbose = False, perm_pval = False)
         #add results from new random run
         ibdfrac_per_cats.append(ibdfrac_per_cat)
-    
+
     #Store results as arrays per categories
     ibdfrac_per_cat_r = {}
-    
+
     for i in list(ibdfrac_per_cats[0].columns):
         ibdfrac_per_cat_r[i] = {}
         for j in list(ibdfrac_per_cats[0].index):
@@ -577,9 +586,9 @@ def get_all_ibdfrac_perms(category_label, ibd_res, ibd_res_meta, ibd_pval, \
 
 def get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r):
     """
-    This method calculated the p-value corresponding to a null-hypothesis test under the 
-    assumption that the fraction of related pairs is independent of their categories. 
-    
+    This method calculated the p-value corresponding to a null-hypothesis test under the
+    assumption that the fraction of related pairs is independent of their categories.
+
     Parameters:
     -----------
     ibdfrac_per_cat: pd.DataFrame
@@ -588,12 +597,12 @@ def get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r):
     ibdfrac_per_cat_r: pd.DataFrame
         Data frame showing the fraction of IBD results higher than the threshold for all
         the permutations for each population of pairs within their correponding categories.
-    
+
     Returns:
     --------
     ibdfrac_per_cat_pval: pd.DataFrame
         Data frame showing the p-value of the deviation of the high IBD fraction
-        with respect to the average (the expected from random pairs) for the different 
+        with respect to the average (the expected from random pairs) for the different
         pairs of categories.
     """
     ibdfrac_per_cat_pval = {}
@@ -631,15 +640,15 @@ def travel_map(travel_matrix, origins, destinies, locations, \
     figsize: list
         Size of figure.
     color: str
-        Colour of connectivity lines. If 'auto', the colour encodes the fraction 
+        Colour of connectivity lines. If 'auto', the colour encodes the fraction
         of IBD related pairs scaled to the range of values. If 'prop', the colour
-        encodes the IBD fraction proportionally. 
+        encodes the IBD fraction proportionally.
     linewidth: 'auto' or int
-        If 'auto', the line width is rescaled with number of travels. 
+        If 'auto', the line width is rescaled with number of travels.
     alpha: float
         Transparency of lines.
     print_locations: bool
-        If True, the names of the locations are printed in the map. 
+        If True, the names of the locations are printed in the map.
 
     Returns:
     --------
@@ -694,7 +703,7 @@ def travel_map(travel_matrix, origins, destinies, locations, \
             ax.add_patch(pp1)
 
             zorder += 1
-        
+
         if linewidth in ['auto', 'prop', 'log']:
             size = 60*travel_matrix.T.sum()[i]/travel_matrix.T.sum().sum()
         else:
@@ -724,33 +733,33 @@ pop_location = 'province'
 def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, p_value = 0.05, \
                                   location = 'province', variable_name = 'rel_origin', pop_location = 'province'):
     """
-    This method estimates the fraction of related pairs for each sample with specified populations. 
-    
-    Parameters: 
+    This method estimates the fraction of related pairs for each sample with specified populations.
+
+    Parameters:
     -----------
     ibd_res_meta: pd.DataFrame
-        Data frame containing the pairwise IBD results and other metadata columns. 
+        Data frame containing the pairwise IBD results and other metadata columns.
     ibd_pval_meta: pd.DataFrame
-        Data frame containing the p-values of the pairwise IBD results and other metadata columns. 
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns.
     ibd_threshold: float
-        Threshold value of IBD to define related pairs. 
+        Threshold value of IBD to define related pairs.
     p_value: float
-        Maximum p-value to consider for related pairs. 
+        Maximum p-value to consider for related pairs.
     location: str
-        Name of column used to identify the location of the sample to define the population to compare with. 
+        Name of column used to identify the location of the sample to define the population to compare with.
     variable_name: str
-        Name of the new column showing the fraction of related pairs for each sample. 
+        Name of the new column showing the fraction of related pairs for each sample.
     pop_location: str
-        Name of column used to select the population to compare with the samples. 
-        
+        Name of column used to select the population to compare with the samples.
+
     Returns:
     --------
     ibd_res_meta: pd.DataFrame
-        Data frame containing the pairwise IBD results and other metadata columns, including the new 
-        column variable_name. 
+        Data frame containing the pairwise IBD results and other metadata columns, including the new
+        column variable_name.
     ibd_pval_meta: pd.DataFrame
-        Data frame containing the p-values of the pairwise IBD results and other metadata columns, 
-        including the new column variable_name. 
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns,
+        including the new column variable_name.
     """
     #Defining filled IBD results
     ibd_matrix = np.array(ibd_res_meta.iloc[:len(ibd_res_meta), :len(ibd_res_meta)])
@@ -760,19 +769,19 @@ def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0
     #Defining samples to analyse
     sample_list = ibd_res_meta['sampleID'].unique() #TO DO : make it for only people travelling
     ibd_res_meta[variable_name] = pd.Series({})
-    
+
     #loop
     for i, sample in enumerate(sample_list):
         #location origin of sample
         target_location = ibd_res_meta.loc[ibd_res_meta['sampleID'] == sample, location].iloc[0]
         #Defining samples from origin location
         target_samples = (ibd_res_meta['sampleID'] != sample)&(ibd_res_meta[pop_location] == target_location)
-        
+
         #fraction of pairs with IBD > ibd_threshold
         high_ibd = ibd_matrix[target_samples, ibd_res_meta['sampleID'] == sample] >= ibd_threshold
         low_pval = pval_matrix[target_samples, ibd_pval_meta['sampleID'] == sample] <= p_value
         rel_fraction = (high_ibd&low_pval).mean()
-        
+
         #saving relatedness with origin population
         ibd_res_meta.loc[ibd_res_meta['sampleID'] == sample, variable_name] = rel_fraction
         ibd_pval_meta.loc[ibd_pval_meta['sampleID'] == sample, variable_name] = rel_fraction
@@ -782,28 +791,28 @@ def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0
 
 def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, p_value = 0.05):
     """
-    This method computes for each sample, its fraction of related pairs with its origin population, and with 
-    the destination populations for up to two travels reported. 
-    
-    Parameters: 
+    This method computes for each sample, its fraction of related pairs with its origin population, and with
+    the destination populations for up to two travels reported.
+
+    Parameters:
     -----------
     ibd_res_meta: pd.DataFrame
-        Data frame containing the pairwise IBD results and other metadata columns. 
+        Data frame containing the pairwise IBD results and other metadata columns.
     ibd_pval_meta: pd.DataFrame
-        Data frame containing the p-values of the pairwise IBD results and other metadata columns. 
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns.
     ibd_threshold: float
-        Threshold value of IBD to define related pairs. 
+        Threshold value of IBD to define related pairs.
     p_value: float
         Maximum p-value to consider for related pairs.
-        
+
     Returns:
     --------
     ibd_res_meta: pd.DataFrame
-        Data frame containing the pairwise IBD results and other metadata columns, including the new 
-        columns of relatedness 'rel_origin', 'rel_dest1' and 'rel_dest2'. 
+        Data frame containing the pairwise IBD results and other metadata columns, including the new
+        columns of relatedness 'rel_origin', 'rel_dest1' and 'rel_dest2'.
     ibd_pval_meta: pd.DataFrame
-        Data frame containing the p-values of the pairwise IBD results and other metadata columns, 
-        including the new columns of relatedness 'rel_origin', 'rel_dest1' and 'rel_dest2'. 
+        Data frame containing the p-values of the pairwise IBD results and other metadata columns,
+        including the new columns of relatedness 'rel_origin', 'rel_dest1' and 'rel_dest2'.
     """
     ibd_res_meta, ibd_pval_meta = get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, \
                                                               ibd_threshold = ibd_threshold, p_value = p_value, \
@@ -823,18 +832,18 @@ def simmetrize_matrix(matrix, diagonal = False):
     """
     This method fills the empty values of a matrix from their
     symmetric values.
-    
-    Parameters: 
+
+    Parameters:
     -----------
     matrix: np.array
-        2-D matrix with the same number of rows and columns. 
+        2-D matrix with the same number of rows and columns.
     diagonal: bool
-        If False, the diagonal elements are kept as nan. 
-    
-    Returns: 
+        If False, the diagonal elements are kept as nan.
+
+    Returns:
     --------
     matrix: np.array
-        The filled and diagonal 2-D matrix. 
+        The filled and diagonal 2-D matrix.
     """
     matrix[np.isnan(matrix)] = 0
     matrix = matrix + matrix.T
