@@ -789,7 +789,9 @@ def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0
     ibd_pval_meta[variable_name] = ibd_pval_meta[variable_name].astype(float)
     return ibd_res_meta, ibd_pval_meta
 
-def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, p_value = 0.05):
+def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, \
+                                   ibd_threshold = 0.2, p_value = 0.05, \
+                                   travel2 = False):
     """
     This method computes for each sample, its fraction of related pairs with its origin population, and with
     the destination populations for up to two travels reported.
@@ -804,6 +806,8 @@ def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, ibd_threshold = 
         Threshold value of IBD to define related pairs.
     p_value: float
         Maximum p-value to consider for related pairs.
+    travel2: bool
+        If true, it includes information about a second travel.
 
     Returns:
     --------
@@ -822,10 +826,11 @@ def get_relatedness_origin_travels(ibd_res_meta, ibd_pval_meta, ibd_threshold = 
                                                               ibd_threshold = ibd_threshold, p_value = p_value, \
                                                               location = 'travel_prov', variable_name = 'rel_dest1', \
                                                               pop_location = 'province')
-    ibd_res_meta, ibd_pval_meta = get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, \
-                                                              ibd_threshold = ibd_threshold, p_value = p_value, \
-                                                              location = 'travel_prov2', variable_name = 'rel_dest2', \
-                                                              pop_location = 'province')
+    if travel2:
+        ibd_res_meta, ibd_pval_meta = get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, \
+                                                                    ibd_threshold = ibd_threshold, p_value = p_value, \
+                                                                    location = 'travel_prov2', variable_name = 'rel_dest2', \
+                                                                    pop_location = 'province')
     return ibd_res_meta, ibd_pval_meta
 
 def simmetrize_matrix(matrix, diagonal = False):
