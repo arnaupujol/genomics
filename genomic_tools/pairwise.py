@@ -191,7 +191,8 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                           ibdfrac_pval_per_cat = None, cmap = 'bwr', \
                           cmap_p = 'viridis', min_IBD = .0, max_p = .05, \
                             fontsize = 12, xticks = None, xrotation = 45, \
-                            save_as = None):
+                            save_as = None, cmap_label = None, \
+                            subplot_adj = None):
     """
     This method visualises the results of the fraction of IBD above a threshold
     for different categories.
@@ -224,6 +225,11 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         It defines the path where to save the figures. It assumes that the last
         four characters specify the format (e.g. ".pdf"), so that "_pval" is
         appended to the name before this for the plot showing p-values.
+    cmap_label: str
+        Name of label shown in colorbar.
+    subplot_adj: list
+        List of 4 numbers to define the plt.subplots_adjust function to adjust
+        the figure. 
 
     Returns:
     --------
@@ -245,8 +251,14 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                rotation = xrotation, fontsize = fontsize)
     plt.yticks(np.arange(ibdfrac_per_cat.shape[0]), ibdfrac_per_cat.index, \
                fontsize = fontsize)
-    plt.colorbar().set_label(label = "Fraction of pairwise IBD >= " + str(min_IBD) + \
-                 " and p<= " + str(max_p), size = fontsize)
+    if cmap_label is None:
+        plt.colorbar().set_label(label = "Fraction of pairwise IBD >= " + str(min_IBD) + \
+                    " and p<= " + str(max_p), size = fontsize)
+    else:
+        plt.colorbar().set_label(label = cmap_label, size = fontsize)
+    if subplot_adj is not None:
+        plt.subplots_adjust(left=subplot_adj[0], right=subplot_adj[1], \
+                            top=subplot_adj[2], bottom=subplot_adj[3])
     if save_as is not None:
         plt.savefig(save_as)
     plt.show()
@@ -258,6 +270,9 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         plt.yticks(np.arange(ibdfrac_pval_per_cat.shape[0]), ibdfrac_pval_per_cat.index, \
                    fontsize = fontsize)
         plt.colorbar().set_label(label = 'P-value of deviation wrt average', size = fontsize)
+    if subplot_adj is not None:
+        plt.subplots_adjust(left=subplot_adj[0], right=subplot_adj[1], \
+                            top=subplot_adj[2], bottom=subplot_adj[3])
         if save_as is not None:
             plt.savefig(save_as[:-4] + "_pval" + save_as[-4:])
         plt.show()
