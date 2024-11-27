@@ -322,7 +322,7 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
     ax.set_xlim(xlims[0], xlims[1])
     ax.set_ylim(ylims[0], ylims[1])
     ctx.add_basemap(ax, source=ctx.providers.OpenStreetMap.Mapnik, \
-                    crs='EPSG:4326')
+                    crs='epsg:4326')
 
     #Define x and y positions of locations
     locations['x'] = locations['geometry'].x
@@ -379,7 +379,8 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
             col = 'k'
         locations[locations['location'] == i].plot(ax = ax, \
                                                    markersize = size,
-                                                   color = col, zorder = zorder)
+                                                   color = col, zorder = zorder, \
+                                                   edgecolor = 'k')
         zorder += 1
         if print_locations:
             ax.annotate(i, xy=np.array(list_locs[i]) + np.array([.2,0]))
