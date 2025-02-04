@@ -748,8 +748,10 @@ p_value = .05
 variable_name = 'rel_dest2'
 pop_location = 'province'
 
-def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, p_value = 0.05, \
-                                  location = 'province', variable_name = 'rel_origin', pop_location = 'province'):
+def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0.2, \
+                                    p_value = 0.05, location = 'province', \
+                                    variable_name = 'rel_origin', \
+                                    pop_location = 'province'):
     """
     This method estimates the fraction of related pairs for each sample with specified populations.
 
@@ -793,7 +795,7 @@ def get_relatedness_to_population(ibd_res_meta, ibd_pval_meta, ibd_threshold = 0
         #location origin of sample
         target_location = ibd_res_meta.loc[ibd_res_meta['sampleID'] == sample, location].iloc[0]
         #Defining samples from origin location
-        target_samples = (ibd_res_meta['sampleID'] != sample)&(ibd_res_meta[pop_location] == target_location)
+        target_samples = (ibd_res_meta['sampleID'] != sample)&(ibd_res_meta[pop_location] == target_location) #TO DO : select only people NOT travelling
 
         #fraction of pairs with IBD > ibd_threshold
         high_ibd = ibd_matrix[target_samples, ibd_res_meta['sampleID'] == sample] >= ibd_threshold
