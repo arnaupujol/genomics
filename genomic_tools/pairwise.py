@@ -636,7 +636,8 @@ def get_pval_from_permutations(ibdfrac_per_cat, ibdfrac_per_cat_r):
 def travel_map(travel_matrix, origins, destinies, locations, \
                      xlims = [30, 42], ylims = [-28, -10], \
                      figsize = [6,9], color = 'tab:blue', linewidth = 'auto', \
-                    categories2 = None, alpha = 0.5, print_locations = True):
+                    categories2 = None, alpha = 0.5, print_locations = True, \
+                    color_list = None):
     """
     This method generates a map visualising travels between locations.
 
@@ -660,13 +661,16 @@ def travel_map(travel_matrix, origins, destinies, locations, \
     color: str
         Colour of connectivity lines. If 'auto', the colour encodes the fraction
         of IBD related pairs scaled to the range of values. If 'prop', the colour
-        encodes the IBD fraction proportionally.
+        encodes the IBD fraction proportionally. If 'list', it takes a list of
+        colours from the variable color_list.
     linewidth: 'auto' or int
         If 'auto', the line width is rescaled with number of travels.
     alpha: float
         Transparency of lines.
     print_locations: bool
         If True, the names of the locations are printed in the map.
+    color_list: list
+        List of colours to be used for lines and dots.
 
     Returns:
     --------
@@ -709,8 +713,11 @@ def travel_map(travel_matrix, origins, destinies, locations, \
             yinter = [y[0] + .8*deltay, y[0] + .2*deltay]
             if color == 'auto':
                 col = cm.copper(travel_matrix.loc[i,j]/np.max(np.array(travel_matrix)))
+            elif color == 'list':
+                col = color_list[zorder - 1]
             else:
                 col = color
+            print(i,j)
             pp1 = mpatches.PathPatch(Path([(x[0], y[0]), (xinter[l%2], \
                                           yinter[l%2]), (x[1], y[1])], \
                                           [Path.MOVETO, Path.CURVE3, Path.CURVE3]), \
@@ -731,8 +738,11 @@ def travel_map(travel_matrix, origins, destinies, locations, \
                 col = cm.copper(0)
             else:
                 col = cm.copper(travel_matrix.T.sum()[i]/travel_matrix.T.sum().sum())
+        elif color == 'list':
+            col = color_list[zorder - 1]
         else:
             col = 'k'
+        print(i,i)
         locations[locations['location'] == i].plot(ax = ax, \
                                                    markersize = size,
                                                    color = col, zorder = zorder)
