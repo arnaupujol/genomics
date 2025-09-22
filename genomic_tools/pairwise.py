@@ -192,7 +192,8 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
                           cmap_p = 'viridis', min_IBD = .0, max_p = .05, \
                             fontsize = 12, xticks = None, xrotation = 45, \
                             save_as = None, cmap_label = None, \
-                            subplot_adj = None, pval_name = 'p-value'):
+                            subplot_adj = None, pval_name = 'p-value', \
+                            vmin = None, vmax = None):
     """
     This method visualises the results of the fraction of IBD above a threshold
     for different categories.
@@ -232,6 +233,14 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
         the figure.
     pval_name: str
         Name of the colorbar label for the p-values.
+    vmin: float
+        Minimum IBD value for the colour map. If None, it is defined based on
+        the overall IBD average and its maximum (top or bottom) deviation, so
+        that the central value is the average.
+    vmax: float
+        Maximum IBD value for the colour map. If None, it is defined based on
+        the overall IBD average and its maximum (top or bottom) deviation, so
+        that the central value is the average.
 
     Returns:
     --------
@@ -241,8 +250,10 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     #average fraction
     max_deviation = np.nanmax(np.abs(np.array(ibdfrac_per_cat).flatten() - \
                                   overall_high_ibd_frac))
-    vmin = overall_high_ibd_frac - max_deviation
-    vmax = overall_high_ibd_frac + max_deviation
+    if vmin is None:
+        vmin = overall_high_ibd_frac - max_deviation
+    if vmax is None:
+        vmax = overall_high_ibd_frac + max_deviation
     plt.imshow(np.array(ibdfrac_per_cat), vmin = vmin, vmax = vmax, \
                cmap = 'bwr')
     if xticks is None:
