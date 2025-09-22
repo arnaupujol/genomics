@@ -255,7 +255,7 @@ def show_ibd_frac_per_cat(ibdfrac_per_cat, overall_high_ibd_frac, \
     if vmax is None:
         vmax = overall_high_ibd_frac + max_deviation
     plt.imshow(np.array(ibdfrac_per_cat), vmin = vmin, vmax = vmax, \
-               cmap = 'bwr')
+               cmap = cmap)
     if xticks is None:
         xnames = ibdfrac_per_cat.columns
     else:
