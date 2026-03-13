@@ -364,7 +364,7 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
                                               np.mean(np.array(ibdfrac_per_cat))))
                 vmin = np.mean(np.array(ibdfrac_per_cat)) - max_deviation
                 vmax = np.mean(np.array(ibdfrac_per_cat)) + max_deviation
-                col = cm.turbo((ibdfrac_per_cat.loc[i,j] - vmin)/(vmax-vmin))
+                col = cm.plasma((ibdfrac_per_cat.loc[i,j] - vmin)/(vmax-vmin))
             else:
                 col = color
             pp1 = mpatches.PathPatch(Path([(x[0], y[0]), (xinter[l%2], \
@@ -385,7 +385,7 @@ def connectivity_map(ibdfrac_per_cat, categories, locations, \
         else:
             size = 40
         if color == 'auto':
-            col = cm.turbo((ibdfrac_per_cat.loc[i,i] - vmin)/(vmax-vmin))
+            col = cm.plasma((ibdfrac_per_cat.loc[i,i] - vmin)/(vmax-vmin))
         else:
             col = 'k'
         locations[locations['location'] == i].plot(ax = ax, \
