@@ -257,3 +257,86 @@ def make_hist(variable, nbins = 50, range = None, title = "", xlabel = "", ylabe
     plt.yscale(yscale)
     if show:
         plt.show()
+
+def plot_ibd_heatmap(ibd_res, ibd_pval, i=0, j=50, figsize=(10, 8)):
+    """
+    Visualize pairwise IBD results as a heatmap with significance-based alpha transparency.
+    
+    Parameters:
+    -----------
+    ibd_res : pd.DataFrame
+        DataFrame containing IBD results (values between 0-1)
+    ibd_pval : pd.DataFrame
+        DataFrame containing p-values for IBD results
+    i : int, default=0
+        Start index for row subset
+    j : int, default=50
+        End index for row subset
+    figsize : tuple, default=(10, 8)
+        Figure size (width, height)
+    
+    Returns:
+    --------
+    None (displays plot)
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Extract subset and create alpha transparency based on significance
+    subset = np.array(ibd_res.iloc[i:j, i:j])
+    pval_subset = np.array(ibd_pval.iloc[i:j, i:j])
+    alpha = 0.5 + 0.5 * np.array(pval_subset < 0.05, dtype=float)
+    
+    # Plot with alpha transparency
+    im = ax.imshow(subset, alpha=alpha)
+    
+    # Set tick labels
+    sample_names = ibd_res.iloc[i:j, i:j].index
+    ax.set_yticks(np.arange(len(sample_names)))
+    ax.set_xticks(np.arange(len(sample_names)))
+    ax.set_yticklabels(sample_names, fontsize=6)
+    ax.set_xticklabels(sample_names, rotation=90, fontsize=6)
+    
+    # Add colorbar and labels
+    cbar = plt.colorbar(im, ax=ax, label='IBD')
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_ibd_pvalues(ibd_pval, i=0, j=50, figsize=(10, 8)):
+    """
+    Visualize p-values of pairwise IBD results as a heatmap.
+    
+    Parameters:
+    -----------
+    ibd_pval : pd.DataFrame
+        DataFrame containing p-values for IBD results
+    i : int, default=0
+        Start index for row subset
+    j : int, default=50
+        End index for row subset
+    figsize : tuple, default=(10, 8)
+        Figure size (width, height)
+    
+    Returns:
+    --------
+    None (displays plot)
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Extract subset
+    subset = np.array(ibd_pval.iloc[i:j, i:j])
+    
+    # Plot
+    im = ax.imshow(subset)
+    
+    # Set tick labels
+    sample_names = ibd_pval.iloc[i:j, i:j].index
+    ax.set_yticks(np.arange(len(sample_names)))
+    ax.set_xticks(np.arange(len(sample_names)))
+    ax.set_yticklabels(sample_names, fontsize=6)
+    ax.set_xticklabels(sample_names, rotation=90, fontsize=6)
+    
+    # Add colorbar and labels
+    cbar = plt.colorbar(im, ax=ax, label=r'p-value')
+    plt.tight_layout()
+    plt.show()
